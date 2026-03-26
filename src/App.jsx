@@ -55,13 +55,15 @@ function rewriteSvg(raw, strokeWidth, size) {
   clone.setAttribute("width", size);
   clone.setAttribute("height", size);
   clone.setAttribute("viewBox", viewBox.join(" "));
+  // Always set stroke-width on root so it applies to all inheriting children
+  clone.setAttribute("stroke-width", strokeWidth);
+  // Also override any child elements that have their own explicit stroke-width
   clone.querySelectorAll("*").forEach((el) => {
     if (el.getAttribute("stroke-width") !== null) el.setAttribute("stroke-width", strokeWidth);
     const st = el.getAttribute("style");
     if (st && st.includes("stroke-width"))
       el.setAttribute("style", st.replace(/stroke-width:\s*[^;]+/g, `stroke-width: ${strokeWidth}`));
   });
-  if (clone.getAttribute("stroke-width") !== null) clone.setAttribute("stroke-width", strokeWidth);
   return new XMLSerializer().serializeToString(clone);
 }
 
