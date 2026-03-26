@@ -2,6 +2,12 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import iconLists from "virtual:icon-lists";
 
 const PRESET_SIZES = [12, 16, 20, 24, 32, 40, 48, 64];
+const STORAGE_KEY = "icon-scaler-v1";
+
+function loadSaved() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {}; }
+  catch { return {}; }
+}
 
 function calcStroke(refStroke, refSize, targetSize, intensity) {
   if (intensity === 0 || targetSize === refSize) return refStroke;
@@ -346,14 +352,20 @@ function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRemove }) {
 
 /* ── Main App ── */
 export default function IconScaler() {
-  const [workspace, setWorkspace] = useState([]); // [{id, lib, name, svgText, detectedStroke}]
+  const [workspace, setWorkspace] = useState(() => {
+    const s = loadSaved();
+    return Array.isArray(s.workspace) ? s.workspace : [];
+  });
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
-  const [refSize, setRefSize] = useState(24);
-  const [refStroke, setRefStroke] = useState(2);
-  const [scalingMode, setScalingMode] = useState("auto");
-  const [autoIntensity, setAutoIntensity] = useState(0.5);
-  const [activeSizes, setActiveSizes] = useState([12, 16, 20, 24, 32, 48]);
-  const [manualStrokes, setManualStrokes] = useState({});
+  const [refSize, setRefSize] = useState(() => loadSaved().refSize ?? 24);
+  const [refStroke, setRefStroke] = useState(() => loadSaved().refStroke ?? 2);
+  const [scalingMode, setScalingMode] = useState(() => loadSaved().scalingMode ?? "auto");
+  const [autoIntensity, setAutoIntensity] = useState(() => loadSaved().autoIntensity ?? 0.5);
+  const [activeSizes, setActiveSizes] = useState(() => {
+    const s = loadSaved();
+    return Array.isArray(s.activeSizes) ? s.activeSizes : [12, 16, 20, 24, 32, 48];
+  });
+  const [manualStrokes, setManualStrokes] = useState(() => loadSaved().manualStrokes ?? {});
   const [showBrowser, setShowBrowser] = useState(false);
   const [exportProgress, setExportProgress] = useState(null); // null | {done, total}
 
@@ -361,6 +373,27 @@ export default function IconScaler() {
     const l = document.createElement("link");
     l.href = "https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap";
     l.rel = "stylesheet"; document.head.appendChild(l);
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes,
+      }));
+    } catch (e) {
+      console.warn("Failed to save state:", e.message);
+    }
+  }, [workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes]);
+
+  const clearAll = useCallback(() => {
+    setWorkspace([]);
+    setRefSize(24);
+    setRefStroke(2);
+    setScalingMode("auto");
+    setAutoIntensity(0.5);
+    setActiveSizes([12, 16, 20, 24, 32, 48]);
+    setManualStrokes({});
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const workspaceIds = useMemo(() => new Set(workspace.map((item) => `${item.lib}:${item.name}`)), [workspace]);
@@ -473,6 +506,12 @@ export default function IconScaler() {
             <span style={{ fontSize: 10, color: "#3a3a3a" }}>{workspace.length} icon{workspace.length !== 1 ? "s" : ""}</span>
           )}
         </div>
+        {workspace.length > 0 && (
+          <button onClick={clearAll}
+            style={{ padding: "6px 14px", fontSize: 11, background: "transparent", color: "#444", border: "1px solid #222", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+            Clear all
+          </button>
+        )}
         <button onClick={() => setShowBrowser(true)}
           style={{ padding: "6px 14px", fontSize: 11, background: "linear-gradient(135deg, #161625, #131a2e)", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
           ◇ Browse Icons
