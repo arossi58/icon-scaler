@@ -23,11 +23,11 @@ const ICON_LIBRARIES = {
     fetchList: async () => iconLists.lucide,
     fetchSvg: async (n) => { const r = await fetch(`/icons/lucide/${n}.svg`); return r.text(); },
   },
-  phosphor: {
-    name: "Phosphor",
-    desc: `${iconLists.phosphor.length} icons`,
-    fetchList: async () => iconLists.phosphor,
-    fetchSvg: async (n) => { const r = await fetch(`/icons/phosphor/${n}.svg`); return r.text(); },
+  tabler: {
+    name: "Tabler",
+    desc: `${iconLists.tabler.length} icons`,
+    fetchList: async () => iconLists.tabler,
+    fetchSvg: async (n) => { const r = await fetch(`/icons/tabler/${n}.svg`); return r.text(); },
   },
   heroicons: {
     name: "Heroicons",
@@ -243,15 +243,8 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
         <div style={{ padding: "12px 18px 8px" }}>
           <input ref={searchRef} type="text" placeholder="Search icons…" value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ width: "100%", padding: "9px 12px", fontSize: 12, fontFamily: "'DM Mono', monospace", background: "#141414", color: "#ccc", border: "1px solid #252525", borderRadius: 7, outline: "none", boxSizing: "border-box" }} />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+          <div style={{ marginTop: 6 }}>
             <span style={{ fontSize: 10, color: "#888" }}>{loading ? "Loading…" : `${filtered.length} icons`}{search && !loading ? ` matching "${search}"` : ""}</span>
-            {totalPages > 1 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} style={pagBtn(page === 0)}>‹</button>
-                <span style={{ fontSize: 10, color: "#999", fontVariantNumeric: "tabular-nums" }}>{page + 1}/{totalPages}</span>
-                <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={pagBtn(page >= totalPages - 1)}>›</button>
-              </div>
-            )}
           </div>
         </div>
         {error && <div style={{ padding: "6px 18px", fontSize: 11, color: "#e07070" }}>{error}</div>}
@@ -275,21 +268,36 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
             </div>
           )}
         </div>
-        <div style={{ padding: "10px 18px", borderTop: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 8, background: "#0a0a0a" }}>
-          <span style={{ fontSize: 10, color: selected.size > 0 ? "#999" : "#888", fontFamily: "'DM Mono', monospace" }}>
-            {selected.size > 0 ? `${selected.size} icon${selected.size !== 1 ? "s" : ""} selected` : "Click icons to select"}
-          </span>
-          {selected.size > 0 && (
-            <button onClick={() => setSelected(new Set())}
-              style={{ fontSize: 9, color: "#999", background: "transparent", border: "1px solid #252525", borderRadius: 4, padding: "2px 7px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
-              Clear
-            </button>
+        <div style={{ borderTop: "1px solid #1e1e1e", background: "#0a0a0a" }}>
+          {totalPages > 1 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "10px 18px 8px", borderBottom: "1px solid #161616" }}>
+              <button onClick={() => setPage(0)} disabled={page === 0}
+                style={{ padding: "6px 10px", fontSize: 12, background: "transparent", color: page === 0 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page === 0 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>«</button>
+              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
+                style={{ padding: "6px 12px", fontSize: 14, background: "transparent", color: page === 0 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page === 0 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>‹</button>
+              <span style={{ fontSize: 11, color: "#ccc", fontVariantNumeric: "tabular-nums", minWidth: 72, textAlign: "center", fontFamily: "'DM Mono', monospace" }}>{page + 1} / {totalPages}</span>
+              <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                style={{ padding: "6px 12px", fontSize: 14, background: "transparent", color: page >= totalPages - 1 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>›</button>
+              <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}
+                style={{ padding: "6px 10px", fontSize: 12, background: "transparent", color: page >= totalPages - 1 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>»</button>
+            </div>
           )}
-          <div style={{ flex: 1 }} />
-          <button onClick={handleAdd} disabled={selected.size === 0}
-            style={{ padding: "6px 14px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: selected.size > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "transparent", color: selected.size > 0 ? "#7a9ad4" : "#888", border: `1px solid ${selected.size > 0 ? "#253050" : "#1e1e1e"}`, borderRadius: 6, cursor: selected.size > 0 ? "pointer" : "default" }}>
-            {selected.size > 0 ? `Add ${selected.size} to workspace →` : "Add to workspace"}
-          </button>
+          <div style={{ padding: "10px 18px", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 10, color: selected.size > 0 ? "#999" : "#888", fontFamily: "'DM Mono', monospace" }}>
+              {selected.size > 0 ? `${selected.size} icon${selected.size !== 1 ? "s" : ""} selected` : "Click icons to select"}
+            </span>
+            {selected.size > 0 && (
+              <button onClick={() => setSelected(new Set())}
+                style={{ fontSize: 9, color: "#999", background: "transparent", border: "1px solid #252525", borderRadius: 4, padding: "2px 7px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+                Clear
+              </button>
+            )}
+            <div style={{ flex: 1 }} />
+            <button onClick={handleAdd} disabled={selected.size === 0}
+              style={{ padding: "6px 14px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: selected.size > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "transparent", color: selected.size > 0 ? "#7a9ad4" : "#888", border: `1px solid ${selected.size > 0 ? "#253050" : "#1e1e1e"}`, borderRadius: 6, cursor: selected.size > 0 ? "pointer" : "default" }}>
+              {selected.size > 0 ? `Add ${selected.size} to workspace →` : "Add to workspace"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -786,7 +794,3 @@ export default function IconScaler() {
 }
 
 const secLabel = { fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 };
-
-function pagBtn(d) {
-  return { padding: "2px 8px", fontSize: 10, background: "transparent", color: d ? "#888" : "#999", border: "1px solid #1e1e1e", borderRadius: 4, cursor: d ? "default" : "pointer", fontFamily: "'DM Mono', monospace" };
-}

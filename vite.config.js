@@ -5,7 +5,7 @@ import path from "path";
 
 const ICON_DIRS = {
   lucide: "node_modules/lucide-static/icons",
-  phosphor: "node_modules/@phosphor-icons/core/assets/regular",
+  tabler: "node_modules/@tabler/icons/icons/outline",
   heroicons: "node_modules/heroicons/24/outline",
 };
 
@@ -43,7 +43,7 @@ function iconPlugin() {
     // Serve SVGs from node_modules in dev
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const m = req.url?.match(/^\/icons\/(lucide|phosphor|heroicons)\/([^/?]+\.svg)$/);
+        const m = req.url?.match(/^\/icons\/(lucide|tabler|heroicons)\/([^/?]+\.svg)$/);
         if (!m) return next();
         const [, lib, file] = m;
         const filePath = path.resolve(ICON_DIRS[lib], file);
