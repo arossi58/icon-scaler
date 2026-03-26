@@ -62,58 +62,56 @@ export default function IconBrowser({ onAddToWorkspace, onClose, existingIds }) 
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)" }}
+      className="browser-overlay"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ width: "min(740px, 94vw)", maxHeight: "84vh", background: "#0e0e0e", border: "1px solid #222", borderRadius: 14, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+      <div className="browser-modal">
 
         {/* Header */}
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 500, color: "#f0f0f0", fontFamily: "'DM Mono', monospace" }}>Icon Library</span>
-          <div style={{ flex: 1 }} />
+        <div className="browser-header">
+          <span className="browser-header-title">Icon Library</span>
+          <div className="browser-header-spacer" />
           {selected.size > 0 && (
-            <span style={{ fontSize: 10, color: "#999", fontFamily: "'DM Mono', monospace" }}>{selected.size} selected</span>
+            <span className="browser-selected-count">{selected.size} selected</span>
           )}
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#999", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button onClick={onClose} className="browser-close-btn">×</button>
         </div>
 
         {/* Library tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid #1e1e1e", padding: "0 18px" }}>
+        <div className="browser-tabs">
           {Object.entries(ICON_LIBRARIES).map(([key, val]) => (
             <button key={key} onClick={() => { setLib(key); setSearch(""); }}
-              style={{ padding: "10px 16px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: "transparent", color: lib === key ? "#f0f0f0" : "#999", border: "none", borderBottom: lib === key ? "2px solid #f0f0f0" : "2px solid transparent", cursor: "pointer", marginBottom: -1, display: "flex", alignItems: "baseline", gap: 6 }}>
-              {val.name}<span style={{ fontSize: 9, color: "#888" }}>{val.desc}</span>
+              className={`browser-tab${lib === key ? " browser-tab--active" : ""}`}>
+              {val.name}<span className="browser-tab-desc">{val.desc}</span>
             </button>
           ))}
         </div>
 
         {/* Search */}
-        <div style={{ padding: "12px 18px 8px" }}>
+        <div className="browser-search">
           <input
             ref={searchRef}
             type="text"
             placeholder="Search icons…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: "100%", padding: "9px 12px", fontSize: 12, fontFamily: "'DM Mono', monospace", background: "#141414", color: "#ccc", border: "1px solid #252525", borderRadius: 7, outline: "none", boxSizing: "border-box" }}
+            className="browser-search-input"
           />
-          <div style={{ marginTop: 6 }}>
-            <span style={{ fontSize: 10, color: "#888" }}>
-              {loading ? "Loading…" : `${filtered.length} icons`}{search && !loading ? ` matching "${search}"` : ""}
-            </span>
+          <div className="browser-search-info">
+            {loading ? "Loading…" : `${filtered.length} icons`}{search && !loading ? ` matching "${search}"` : ""}
           </div>
         </div>
 
-        {error && <div style={{ padding: "6px 18px", fontSize: 11, color: "#e07070" }}>{error}</div>}
+        {error && <div className="browser-error">{error}</div>}
 
         {/* Icon grid */}
-        <div style={{ flex: 1, overflow: "auto", padding: "6px 18px 18px" }}>
+        <div className="browser-grid-wrap">
           {loading ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, color: "#888", fontSize: 12 }}>Fetching icon list…</div>
+            <div className="browser-loading">Fetching icon list…</div>
           ) : filtered.length === 0 ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 120, color: "#888", fontSize: 12 }}>No icons match "{search}"</div>
+            <div className="browser-empty">No icons match "{search}"</div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 3 }}>
+            <div className="browser-grid">
               {pageIcons.map((name) => {
                 const key = `${lib}:${name}`;
                 const inWorkspace = existingIds.has(key);
@@ -133,33 +131,25 @@ export default function IconBrowser({ onAddToWorkspace, onClose, existingIds }) 
         </div>
 
         {/* Footer */}
-        <div style={{ borderTop: "1px solid #1e1e1e", background: "#0a0a0a" }}>
+        <div className="browser-footer">
           {totalPages > 1 && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "10px 18px 8px", borderBottom: "1px solid #161616" }}>
-              <button onClick={() => setPage(0)} disabled={page === 0}
-                style={{ padding: "6px 10px", fontSize: 12, background: "transparent", color: page === 0 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page === 0 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>«</button>
-              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
-                style={{ padding: "6px 12px", fontSize: 14, background: "transparent", color: page === 0 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page === 0 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>‹</button>
-              <span style={{ fontSize: 11, color: "#ccc", fontVariantNumeric: "tabular-nums", minWidth: 72, textAlign: "center", fontFamily: "'DM Mono', monospace" }}>{page + 1} / {totalPages}</span>
-              <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                style={{ padding: "6px 12px", fontSize: 14, background: "transparent", color: page >= totalPages - 1 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>›</button>
-              <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}
-                style={{ padding: "6px 10px", fontSize: 12, background: "transparent", color: page >= totalPages - 1 ? "#333" : "#999", border: "1px solid #1e1e1e", borderRadius: 5, cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "'DM Mono', monospace" }}>»</button>
+            <div className="browser-pagination">
+              <button onClick={() => setPage(0)} disabled={page === 0} className="pag-btn">«</button>
+              <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="pag-btn-wide">‹</button>
+              <span className="pag-page">{page + 1} / {totalPages}</span>
+              <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="pag-btn-wide">›</button>
+              <button onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1} className="pag-btn">»</button>
             </div>
           )}
-          <div style={{ padding: "10px 18px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 10, color: selected.size > 0 ? "#999" : "#888", fontFamily: "'DM Mono', monospace" }}>
+          <div className="browser-footer-bar">
+            <span className={`browser-sel-label${selected.size > 0 ? " browser-sel-label--active" : ""}`}>
               {selected.size > 0 ? `${selected.size} icon${selected.size !== 1 ? "s" : ""} selected` : "Click icons to select"}
             </span>
             {selected.size > 0 && (
-              <button onClick={() => setSelected(new Set())}
-                style={{ fontSize: 9, color: "#999", background: "transparent", border: "1px solid #252525", borderRadius: 4, padding: "2px 7px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
-                Clear
-              </button>
+              <button onClick={() => setSelected(new Set())} className="btn-clear-sel">Clear</button>
             )}
-            <div style={{ flex: 1 }} />
-            <button onClick={handleAdd} disabled={selected.size === 0}
-              style={{ padding: "6px 14px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: selected.size > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "transparent", color: selected.size > 0 ? "#7a9ad4" : "#888", border: `1px solid ${selected.size > 0 ? "#253050" : "#1e1e1e"}`, borderRadius: 6, cursor: selected.size > 0 ? "pointer" : "default" }}>
+            <div className="browser-header-spacer" />
+            <button onClick={handleAdd} disabled={selected.size === 0} className="btn-add">
               {selected.size > 0 ? `Add ${selected.size} to workspace →` : "Add to workspace"}
             </button>
           </div>

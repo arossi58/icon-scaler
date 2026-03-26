@@ -16,7 +16,7 @@ export default function CurveGraph({ intensity, refSize, refStroke, sizes }) {
   }
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="curve-graph">
       <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="#222" strokeWidth="1" />
       <line x1={pad} y1={pad} x2={pad} y2={H - pad} stroke="#222" strokeWidth="1" />
       <polyline points={pts.join(" ")} fill="none" stroke="#c9a55a" strokeWidth="1.5" opacity="0.7" />

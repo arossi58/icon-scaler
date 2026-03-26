@@ -32,10 +32,10 @@ export default function IconThumb({ lib, name }) {
   }, [lib, name]);
 
   return (
-    <div ref={ref} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#bbb" }}>
+    <div ref={ref} className="icon-thumb">
       {svg
         ? <span dangerouslySetInnerHTML={{ __html: svg }} />
-        : <span style={{ fontSize: 10, color: "#888" }}>·</span>}
+        : <span className="icon-thumb-placeholder">·</span>}
     </div>
   );
 }
