@@ -53,6 +53,23 @@ function parseSvg(raw) {
   return { svg, width: w, height: h, viewBox: viewBox || [0, 0, w, h] };
 }
 
+// Returns true if any element in the SVG uses stroke painting.
+function hasSvgStrokes(svgEl) {
+  const usesStroke = (el) => {
+    const s = el.getAttribute("stroke");
+    if (s && s !== "none") return true;
+    if (el.getAttribute("stroke-width") !== null) return true;
+    const st = el.getAttribute("style");
+    if (st && /stroke\s*:\s*(?!none)/.test(st)) return true;
+    return false;
+  };
+  if (usesStroke(svgEl)) return true;
+  for (const el of svgEl.querySelectorAll("*")) {
+    if (usesStroke(el)) return true;
+  }
+  return false;
+}
+
 function rewriteSvg(raw, strokeWidth, size) {
   const parsed = parseSvg(raw);
   if (!parsed) return raw;
@@ -64,6 +81,14 @@ function rewriteSvg(raw, strokeWidth, size) {
   // Convert strokeWidth (in screen-pixel terms) to the icon's native coordinate space.
   // e.g. Phosphor uses a 256×256 viewBox: stroke-width="2" at 24px → 2*(256/24) ≈ 21.3 native units.
   const nativeSw = Math.round((strokeWidth * (viewBox[2] / size)) * 1000) / 1000;
+  // For fill-based icons (e.g. Phosphor regular), inject stroke so the weight slider works.
+  if (!hasSvgStrokes(clone)) {
+    clone.setAttribute("stroke", "currentColor");
+    clone.setAttribute("stroke-linejoin", "round");
+    clone.setAttribute("stroke-linecap", "round");
+    // Suppress stroke on any fill="none" elements to avoid drawing unwanted box outlines.
+    clone.querySelectorAll("[fill='none']").forEach((el) => el.setAttribute("stroke", "none"));
+  }
   clone.setAttribute("stroke-width", nativeSw);
   clone.querySelectorAll("*").forEach((el) => {
     if (el.getAttribute("stroke-width") !== null) el.setAttribute("stroke-width", nativeSw);
