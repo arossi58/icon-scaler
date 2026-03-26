@@ -1,19 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-
-const DEFAULT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="11" cy="11" r="8"/>
-  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-</svg>`;
+import iconLists from "virtual:icon-lists";
 
 const PRESET_SIZES = [12, 16, 20, 24, 32, 40, 48, 64];
-
-const SCALE_MODES = {
-  none: { label: "None", desc: "Uniform stroke at all sizes", intensity: 0 },
-  subtle: { label: "Subtle", desc: "Light optical correction", intensity: 0.25 },
-  sqrt: { label: "Moderate", desc: "Square-root compensation", intensity: 0.5 },
-  linear: { label: "Aggressive", desc: "Full inverse scaling", intensity: 1.0 },
-  custom: { label: "Custom", desc: "Set your own curve", intensity: null },
-};
 
 function calcStroke(refStroke, refSize, targetSize, intensity) {
   if (intensity === 0 || targetSize === refSize) return refStroke;
@@ -25,42 +13,21 @@ function calcStroke(refStroke, refSize, targetSize, intensity) {
 const ICON_LIBRARIES = {
   lucide: {
     name: "Lucide",
-    desc: "1400+ icons",
-    fetchList: async () => {
-      const r = await fetch("https://unpkg.com/lucide-static@latest/icons/?meta");
-      const d = await r.json();
-      return d.files.filter((f) => f.path.endsWith(".svg")).map((f) => f.path.replace(/\.svg$/, ""));
-    },
-    fetchSvg: async (n) => {
-      const r = await fetch(`https://unpkg.com/lucide-static@latest/icons/${n}.svg`);
-      return r.text();
-    },
+    desc: `${iconLists.lucide.length} icons`,
+    fetchList: async () => iconLists.lucide,
+    fetchSvg: async (n) => { const r = await fetch(`/icons/lucide/${n}.svg`); return r.text(); },
   },
   phosphor: {
     name: "Phosphor",
-    desc: "1500+ icons",
-    fetchList: async () => {
-      const r = await fetch("https://unpkg.com/@phosphor-icons/core@latest/assets/regular/?meta");
-      const d = await r.json();
-      return d.files.filter((f) => f.path.endsWith(".svg")).map((f) => f.path.replace(/\.svg$/, ""));
-    },
-    fetchSvg: async (n) => {
-      const r = await fetch(`https://unpkg.com/@phosphor-icons/core@latest/assets/regular/${n}.svg`);
-      return r.text();
-    },
+    desc: `${iconLists.phosphor.length} icons`,
+    fetchList: async () => iconLists.phosphor,
+    fetchSvg: async (n) => { const r = await fetch(`/icons/phosphor/${n}.svg`); return r.text(); },
   },
   heroicons: {
     name: "Heroicons",
-    desc: "300+ icons",
-    fetchList: async () => {
-      const r = await fetch("https://unpkg.com/heroicons@latest/24/outline/?meta");
-      const d = await r.json();
-      return d.files.filter((f) => f.path.endsWith(".svg")).map((f) => f.path.replace(/\.svg$/, ""));
-    },
-    fetchSvg: async (n) => {
-      const r = await fetch(`https://unpkg.com/heroicons@latest/24/outline/${n}.svg`);
-      return r.text();
-    },
+    desc: `${iconLists.heroicons.length} icons`,
+    fetchList: async () => iconLists.heroicons,
+    fetchSvg: async (n) => { const r = await fetch(`/icons/heroicons/${n}.svg`); return r.text(); },
   },
 };
 
@@ -110,14 +77,14 @@ function detectBaseStroke(raw) {
 }
 
 function SvgBox({ svgString, size }) {
-  const dim = Math.max(size + 16, 48);
+  const dim = Math.max(size + 16, 40);
   return (
     <div
       style={{
         width: dim, height: dim,
         display: "flex", alignItems: "center", justifyContent: "center",
         background: "repeating-conic-gradient(#1a1a1a 0% 25%, #111 0% 50%) 50% / 12px 12px",
-        borderRadius: 8, border: "1px solid #232323",
+        borderRadius: 6, border: "1px solid #232323", flexShrink: 0, color: "#e0e0e0",
       }}
       dangerouslySetInnerHTML={{ __html: svgString }}
     />
@@ -161,15 +128,15 @@ function CurveGraph({ intensity, refSize, refStroke, sizes }) {
 }
 
 /* ── Icon Library Browser ── */
-function IconBrowser({ onSelect, onClose }) {
+function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
   const [lib, setLib] = useState("lucide");
   const [icons, setIcons] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingSvg, setLoadingSvg] = useState(null);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState(new Set()); // Set<"lib:name">
   const PER_PAGE = 80;
   const cache = useRef({});
   const searchRef = useRef(null);
@@ -193,13 +160,22 @@ function IconBrowser({ onSelect, onClose }) {
     setPage(0);
   }, [search, icons]);
 
-  const handlePick = async (name) => {
-    setLoadingSvg(name);
-    try {
-      const svg = await ICON_LIBRARIES[lib].fetchSvg(name);
-      onSelect(svg, `${ICON_LIBRARIES[lib].name} / ${name}`);
-    } catch { setError("Failed to fetch icon."); }
-    setLoadingSvg(null);
+  const toggleSelect = (name) => {
+    const key = `${lib}:${name}`;
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const handleAdd = () => {
+    const list = Array.from(selected).map((key) => {
+      const i = key.indexOf(":");
+      return { lib: key.slice(0, i), name: key.slice(i + 1) };
+    });
+    onAddToWorkspace(list);
+    onClose();
   };
 
   const pageIcons = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
@@ -211,10 +187,13 @@ function IconBrowser({ onSelect, onClose }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{ width: "min(740px, 94vw)", maxHeight: "84vh", background: "#0e0e0e", border: "1px solid #222", borderRadius: 14, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center" }}>
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: "#f0f0f0", fontFamily: "'DM Mono', monospace" }}>Icon Library</span>
           <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#555", fontSize: 18, cursor: "pointer" }}>×</button>
+          {selected.size > 0 && (
+            <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Mono', monospace" }}>{selected.size} selected</span>
+          )}
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#555", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
         <div style={{ display: "flex", borderBottom: "1px solid #1e1e1e", padding: "0 18px" }}>
           {Object.entries(ICON_LIBRARIES).map(([key, val]) => (
@@ -246,24 +225,57 @@ function IconBrowser({ onSelect, onClose }) {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 120, color: "#333", fontSize: 12 }}>No icons match "{search}"</div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 3 }}>
-              {pageIcons.map((name) => (
-                <IconGridItem key={name} name={name} lib={lib} loading={loadingSvg === name} onClick={() => handlePick(name)} />
-              ))}
+              {pageIcons.map((name) => {
+                const key = `${lib}:${name}`;
+                const inWorkspace = existingIds.has(key);
+                return (
+                  <IconGridItem key={name} name={name} lib={lib}
+                    onClick={() => !inWorkspace && toggleSelect(name)}
+                    isSelected={selected.has(key)}
+                    isInWorkspace={inWorkspace} />
+                );
+              })}
             </div>
           )}
+        </div>
+        <div style={{ padding: "10px 18px", borderTop: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 8, background: "#0a0a0a" }}>
+          <span style={{ fontSize: 10, color: selected.size > 0 ? "#777" : "#333", fontFamily: "'DM Mono', monospace" }}>
+            {selected.size > 0 ? `${selected.size} icon${selected.size !== 1 ? "s" : ""} selected` : "Click icons to select"}
+          </span>
+          {selected.size > 0 && (
+            <button onClick={() => setSelected(new Set())}
+              style={{ fontSize: 9, color: "#555", background: "transparent", border: "1px solid #252525", borderRadius: 4, padding: "2px 7px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+              Clear
+            </button>
+          )}
+          <div style={{ flex: 1 }} />
+          <button onClick={handleAdd} disabled={selected.size === 0}
+            style={{ padding: "6px 14px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: selected.size > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "transparent", color: selected.size > 0 ? "#7a9ad4" : "#333", border: `1px solid ${selected.size > 0 ? "#253050" : "#1e1e1e"}`, borderRadius: 6, cursor: selected.size > 0 ? "pointer" : "default" }}>
+            {selected.size > 0 ? `Add ${selected.size} to workspace →` : "Add to workspace"}
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function IconGridItem({ name, lib, loading, onClick }) {
+function IconGridItem({ name, lib, onClick, isSelected, isInWorkspace }) {
   const [hovered, setHovered] = useState(false);
   return (
-    <button onClick={onClick} disabled={loading} title={name} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px 6px", background: loading ? "#191919" : hovered ? "#171717" : "transparent", border: `1px solid ${hovered ? "#2a2a2a" : "transparent"}`, borderRadius: 8, cursor: loading ? "wait" : "pointer", color: "#bbb", transition: "background 0.1s, border-color 0.1s" }}>
+    <button onClick={onClick} disabled={isInWorkspace} title={isInWorkspace ? `${name} (in workspace)` : name}
+      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px 6px",
+        background: isInWorkspace ? "#111" : isSelected ? "#0f1a0f" : hovered ? "#171717" : "transparent",
+        border: `1px solid ${isInWorkspace ? "#181818" : isSelected ? "#1e3a1e" : hovered ? "#2a2a2a" : "transparent"}`,
+        borderRadius: 8, cursor: isInWorkspace ? "default" : "pointer", color: "#bbb",
+        transition: "background 0.1s, border-color 0.1s", opacity: isInWorkspace ? 0.35 : 1 }}>
+      {isSelected && (
+        <div style={{ position: "absolute", top: 4, right: 4, width: 13, height: 13, borderRadius: "50%", background: "#3a7a3a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: 8, color: "#fff", lineHeight: 1 }}>✓</span>
+        </div>
+      )}
       <IconThumb lib={lib} name={name} />
-      <span style={{ fontSize: 8, color: "#4a4a4a", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'DM Mono', monospace" }}>{name}</span>
+      <span style={{ fontSize: 8, color: isSelected ? "#5a9a5a" : "#4a4a4a", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'DM Mono', monospace" }}>{name}</span>
     </button>
   );
 }
@@ -293,29 +305,55 @@ function IconThumb({ lib, name }) {
     return () => { cancelled = true; obs.disconnect(); };
   }, [lib, name]);
   return (
-    <div ref={ref} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#bbb" }}
-      dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}>
-      {!svg && <span style={{ fontSize: 10, color: "#2a2a2a" }}>·</span>}
+    <div ref={ref} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#bbb" }}>
+      {svg ? <span dangerouslySetInnerHTML={{ __html: svg }} /> : <span style={{ fontSize: 10, color: "#2a2a2a" }}>·</span>}
+    </div>
+  );
+}
+
+/* ── Workspace Row ── */
+function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRemove }) {
+  const { name, lib, svgText, detectedStroke } = item;
+  return (
+    <div style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #161616" }}>
+      <div style={{ width: 156, flexShrink: 0, paddingRight: 16 }}>
+        <div style={{ fontSize: 11, color: "#d0d0d0", fontFamily: "'DM Mono', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+        <div style={{ fontSize: 9, color: "#333", fontFamily: "'DM Mono', monospace", marginTop: 2 }}>{ICON_LIBRARIES[lib]?.name ?? lib} · detected:{detectedStroke}</div>
+      </div>
+      <div style={{ display: "flex", gap: 10, flex: 1, alignItems: "flex-end", overflowX: "auto", paddingBottom: 2 }}>
+        {activeSizes.map((size) => {
+          const sw = getStrokeForSize(size);
+          const svg = rewriteSvg(svgText, sw, size);
+          return (
+            <div key={size} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, flexShrink: 0 }}>
+              <SvgBox svgString={svg} size={size} />
+              <span style={{ fontSize: 8, color: "#c9a55a", fontFamily: "'DM Mono', monospace" }}>{sw}</span>
+            </div>
+          );
+        })}
+      </div>
+      <button onClick={onRemove}
+        style={{ marginLeft: 14, padding: "4px 8px", fontSize: 12, lineHeight: 1, background: "transparent", color: "#2a2a2a", border: "1px solid #1a1a1a", borderRadius: 4, cursor: "pointer", fontFamily: "'DM Mono', monospace", flexShrink: 0, transition: "color 0.1s, border-color 0.1s" }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "#666"; e.currentTarget.style.borderColor = "#2a2a2a"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "#2a2a2a"; e.currentTarget.style.borderColor = "#1a1a1a"; }}>
+        ×
+      </button>
     </div>
   );
 }
 
 /* ── Main App ── */
 export default function IconScaler() {
-  const [rawSvg, setRawSvg] = useState(DEFAULT_SVG);
-  const [iconLabel, setIconLabel] = useState(null);
-  const [baseStroke, setBaseStroke] = useState(2);
-  const [refStroke, setRefStroke] = useState(2);
+  const [workspace, setWorkspace] = useState([]); // [{id, lib, name, svgText, detectedStroke}]
+  const [loadingWorkspace, setLoadingWorkspace] = useState(false);
   const [refSize, setRefSize] = useState(24);
-  const [scaleMode, setScaleMode] = useState("sqrt");
-  const [customIntensity, setCustomIntensity] = useState(0.5);
+  const [refStroke, setRefStroke] = useState(2);
+  const [scalingMode, setScalingMode] = useState("auto");
+  const [autoIntensity, setAutoIntensity] = useState(0.5);
   const [activeSizes, setActiveSizes] = useState([12, 16, 20, 24, 32, 48]);
-  const [manualOverrides, setManualOverrides] = useState({});
-  const [tab, setTab] = useState("preview");
-  const [showInput, setShowInput] = useState(false);
+  const [manualStrokes, setManualStrokes] = useState({});
   const [showBrowser, setShowBrowser] = useState(false);
-  const [copied, setCopied] = useState(null);
-  const fileInputRef = useRef(null);
+  const [exportProgress, setExportProgress] = useState(null); // null | {done, total}
 
   useEffect(() => {
     const l = document.createElement("link");
@@ -323,166 +361,215 @@ export default function IconScaler() {
     l.rel = "stylesheet"; document.head.appendChild(l);
   }, []);
 
-  const intensity = scaleMode === "custom" ? customIntensity : SCALE_MODES[scaleMode].intensity;
+  const workspaceIds = useMemo(() => new Set(workspace.map((item) => `${item.lib}:${item.name}`)), [workspace]);
 
-  const getAutoStroke = useCallback((size) => calcStroke(refStroke, refSize, size, intensity), [refStroke, refSize, intensity]);
+  // Returns the final stroke for a given size using the global refStroke
+  const getStrokeForSize = useCallback((size) => {
+    if (scalingMode === "manual") {
+      return manualStrokes[size] ?? calcStroke(refStroke, refSize, size, autoIntensity);
+    }
+    return calcStroke(refStroke, refSize, size, autoIntensity);
+  }, [scalingMode, manualStrokes, refStroke, refSize, autoIntensity]);
 
-  const getFinalStroke = useCallback((size) => {
-    if (manualOverrides[size] !== undefined) return manualOverrides[size];
-    return getAutoStroke(size);
-  }, [manualOverrides, getAutoStroke]);
-
-  const computedStrokes = useMemo(() => {
-    const map = {};
-    activeSizes.forEach((s) => { map[s] = getFinalStroke(s); });
-    return map;
-  }, [activeSizes, getFinalStroke]);
-
-  const handleSvgInput = useCallback((text, label) => {
-    const cleaned = text.trim();
-    if (!cleaned) return;
-    setRawSvg(cleaned);
-    setIconLabel(label || null);
-    const detected = detectBaseStroke(cleaned);
-    setBaseStroke(detected);
-    setRefStroke(detected);
-    setManualOverrides({});
+  const addToWorkspace = useCallback(async (list) => {
+    setLoadingWorkspace(true);
+    const newItems = [];
+    for (const { lib, name } of list) {
+      const id = `${lib}:${name}`;
+      try {
+        const svgText = await ICON_LIBRARIES[lib].fetchSvg(name);
+        newItems.push({ id, lib, name, svgText, detectedStroke: detectBaseStroke(svgText) });
+      } catch (e) {
+        console.warn(`Failed to load ${name}:`, e.message);
+      }
+    }
+    setWorkspace((prev) => {
+      const existing = new Set(prev.map((item) => item.id));
+      return [...prev, ...newItems.filter((item) => !existing.has(item.id))];
+    });
+    setLoadingWorkspace(false);
   }, []);
 
-  const handleFile = useCallback((e) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => handleSvgInput(ev.target.result, file.name.replace(/\.svg$/i, ""));
-    reader.readAsText(file);
-  }, [handleSvgInput]);
+  const removeFromWorkspace = useCallback((id) => {
+    setWorkspace((prev) => prev.filter((item) => item.id !== id));
+  }, []);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file?.name.endsWith(".svg")) {
-      const reader = new FileReader();
-      reader.onload = (ev) => handleSvgInput(ev.target.result, file.name.replace(/\.svg$/i, ""));
-      reader.readAsText(file);
-    } else {
-      const text = e.dataTransfer.getData("text");
-      if (text) handleSvgInput(text);
-    }
-  }, [handleSvgInput]);
+  const switchToAuto = useCallback(() => setScalingMode("auto"), []);
+
+  const switchToManual = useCallback(() => {
+    setManualStrokes((prev) => {
+      const seeded = { ...prev };
+      activeSizes.forEach((s) => {
+        if (seeded[s] === undefined) seeded[s] = calcStroke(refStroke, refSize, s, autoIntensity);
+      });
+      return seeded;
+    });
+    setScalingMode("manual");
+  }, [activeSizes, refStroke, refSize, autoIntensity]);
+
+  const seedManualFromAuto = useCallback(() => {
+    const seeded = {};
+    activeSizes.forEach((s) => { seeded[s] = calcStroke(refStroke, refSize, s, autoIntensity); });
+    setManualStrokes(seeded);
+  }, [activeSizes, refStroke, refSize, autoIntensity]);
 
   const toggleSize = (s) => setActiveSizes((p) => p.includes(s) ? p.filter((x) => x !== s) : [...p, s].sort((a, b) => a - b));
 
-  const exportSvg = (size) => {
-    const sw = computedStrokes[size];
-    const svg = rewriteSvg(rawSvg, sw, size);
-    const blob = new Blob([svg], { type: "image/svg+xml" });
+  const exportAll = useCallback(async () => {
+    if (workspace.length === 0 || activeSizes.length === 0) return;
+    setExportProgress({ done: 0, total: workspace.length });
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    for (let i = 0; i < workspace.length; i++) {
+      const { name, svgText } = workspace[i];
+      activeSizes.forEach((size) => {
+        const sw = getStrokeForSize(size);
+        zip.file(`${name}-${size}px.svg`, rewriteSvg(svgText, sw, size));
+      });
+      setExportProgress({ done: i + 1, total: workspace.length });
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
-    a.download = `${(iconLabel || "icon").replace(/[^a-zA-Z0-9-_]/g, "-")}-${size}px.svg`;
-    a.click(); URL.revokeObjectURL(url);
-  };
+    const a = document.createElement("a");
+    a.href = url; a.download = "icons.zip"; a.click();
+    URL.revokeObjectURL(url);
+    setExportProgress(null);
+  }, [workspace, activeSizes, getStrokeForSize]);
 
-  const exportAll = () => activeSizes.forEach((s, i) => setTimeout(() => exportSvg(s), i * 100));
-
-  const copySvg = (size) => {
-    const sw = computedStrokes[size];
-    navigator.clipboard.writeText(rewriteSvg(rawSvg, sw, size));
-    setCopied(size); setTimeout(() => setCopied(null), 1500);
-  };
-
-  const isValid = parseSvg(rawSvg) !== null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#e0e0e0", fontFamily: "'DM Mono', monospace" }}
-      onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
+    <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#e0e0e0", fontFamily: "'DM Mono', monospace" }}>
 
-      {showBrowser && <IconBrowser onSelect={(svg, label) => { handleSvgInput(svg, label); setShowBrowser(false); }} onClose={() => setShowBrowser(false)} />}
+      {showBrowser && (
+        <IconBrowser
+          onAddToWorkspace={addToWorkspace}
+          onClose={() => setShowBrowser(false)}
+          existingIds={workspaceIds}
+        />
+      )}
+
+      {exportProgress && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)" }}>
+          <div style={{ textAlign: "center", fontFamily: "'DM Mono', monospace" }}>
+            <div style={{ fontSize: 13, color: "#f0f0f0", marginBottom: 12 }}>Exporting…</div>
+            <div style={{ width: 200, height: 2, background: "#1e1e1e", borderRadius: 1, overflow: "hidden", marginBottom: 8 }}>
+              <div style={{ height: "100%", background: "#7a9ad4", borderRadius: 1, width: `${(exportProgress.done / exportProgress.total) * 100}%`, transition: "width 0.1s" }} />
+            </div>
+            <div style={{ fontSize: 10, color: "#555", fontVariantNumeric: "tabular-nums" }}>{exportProgress.done} / {exportProgress.total}</div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid #1e1e1e", padding: "12px 18px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <div style={{ borderBottom: "1px solid #1e1e1e", padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: "auto" }}>
           <div style={{ width: 26, height: 26, borderRadius: 6, background: "linear-gradient(135deg, #f0f0f0, #888)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2v12M4 4l8 8M12 4l-8 8" stroke="#0a0a0a" strokeWidth="1.5" strokeLinecap="round" /></svg>
           </div>
           <span style={{ fontSize: 13, fontWeight: 500, color: "#f0f0f0" }}>Icon Scaler</span>
-          {iconLabel && <span style={{ fontSize: 11, color: "#4a4a4a" }}>{iconLabel}</span>}
+          {workspace.length > 0 && (
+            <span style={{ fontSize: 10, color: "#3a3a3a" }}>{workspace.length} icon{workspace.length !== 1 ? "s" : ""}</span>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <button onClick={() => setShowBrowser(true)} style={{ padding: "6px 14px", fontSize: 11, background: "linear-gradient(135deg, #161625, #131a2e)", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>◇ Icon Library</button>
-          <button onClick={() => setShowInput(!showInput)} style={{ padding: "6px 14px", fontSize: 11, background: showInput ? "#1e1e1e" : "transparent", color: showInput ? "#f0f0f0" : "#555", border: "1px solid #2a2a2a", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>Paste SVG</button>
-          <button onClick={() => fileInputRef.current?.click()} style={{ padding: "6px 14px", fontSize: 11, background: "transparent", color: "#555", border: "1px solid #2a2a2a", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>Upload</button>
-          <input ref={fileInputRef} type="file" accept=".svg" onChange={handleFile} style={{ display: "none" }} />
-        </div>
+        <button onClick={() => setShowBrowser(true)}
+          style={{ padding: "6px 14px", fontSize: 11, background: "linear-gradient(135deg, #161625, #131a2e)", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+          ◇ Browse Icons
+        </button>
       </div>
 
       <div style={{ display: "flex", minHeight: "calc(100vh - 51px)" }}>
         {/* ── Sidebar ── */}
         <div style={{ width: 268, minWidth: 268, borderRight: "1px solid #1e1e1e", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" }}>
 
-          {/* Reference settings */}
+          {/* Reference */}
           <div style={{ background: "#111", borderRadius: 8, padding: "12px 12px 14px", border: "1px solid #1a1a1a" }}>
-            <div style={secLabel}>Reference Point</div>
-            <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+            <div style={secLabel}>Reference</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Size (px)</div>
+                <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Design size</div>
                 <select value={refSize} onChange={(e) => setRefSize(Number(e.target.value))}
                   style={{ width: "100%", padding: "5px 6px", fontSize: 11, background: "#181818", color: "#ccc", border: "1px solid #252525", borderRadius: 5, outline: "none", fontFamily: "'DM Mono', monospace" }}>
                   {PRESET_SIZES.map((s) => <option key={s} value={s}>{s}px</option>)}
                 </select>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Stroke</div>
-                <input type="number" min="0.25" max="8" step="0.25" value={refStroke}
-                  onChange={(e) => setRefStroke(parseFloat(e.target.value) || 1)}
-                  style={{ width: "100%", padding: "5px 6px", fontSize: 11, background: "#181818", color: "#ccc", border: "1px solid #252525", borderRadius: 5, outline: "none", fontFamily: "'DM Mono', monospace", boxSizing: "border-box" }} />
+              <div style={{ paddingTop: 14, textAlign: "right" }}>
+                <span style={{ fontSize: 15, fontWeight: 500, color: "#c9a55a", fontVariantNumeric: "tabular-nums" }}>{refStroke}</span>
               </div>
             </div>
-            <div style={{ fontSize: 9, color: "#333" }}>Icon is designed at {refSize}px with stroke {refStroke}</div>
+            <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Base stroke weight</div>
+            <input type="range" min="0.25" max="8" step="0.25" value={refStroke}
+              onChange={(e) => setRefStroke(parseFloat(e.target.value))}
+              style={{ width: "100%", accentColor: "#c9a55a" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#2a2a2a", marginTop: 2 }}>
+              <span>0.25</span><span>8</span>
+            </div>
           </div>
 
-          {/* Scaling mode */}
+          {/* Scaling */}
           <div style={{ background: "#111", borderRadius: 8, padding: "12px 12px 14px", border: "1px solid #1a1a1a" }}>
-            <div style={secLabel}>Auto Scaling</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8 }}>
-              {Object.entries(SCALE_MODES).map(([key, m]) => (
-                <button key={key} onClick={() => setScaleMode(key)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                    background: scaleMode === key ? "#1a1a1a" : "transparent",
-                    border: `1px solid ${scaleMode === key ? "#2a2a2a" : "transparent"}`,
-                    borderRadius: 6, cursor: "pointer", textAlign: "left",
-                  }}>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", border: `2px solid ${scaleMode === key ? "#c9a55a" : "#333"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {scaleMode === key && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#c9a55a" }} />}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: scaleMode === key ? "#f0f0f0" : "#777", fontFamily: "'DM Mono', monospace" }}>{m.label}</div>
-                    <div style={{ fontSize: 9, color: "#3a3a3a" }}>{m.desc}</div>
-                  </div>
+            <div style={{ display: "flex", background: "#0e0e0e", borderRadius: 6, padding: 2, marginBottom: 12, border: "1px solid #191919" }}>
+              {[["auto", "Auto"], ["manual", "Manual"]].map(([mode, label]) => (
+                <button key={mode}
+                  onClick={() => mode === "auto" ? switchToAuto() : switchToManual()}
+                  style={{ flex: 1, padding: "5px 0", fontSize: 11, fontFamily: "'DM Mono', monospace", background: scalingMode === mode ? "#1a1a1a" : "transparent", color: scalingMode === mode ? "#f0f0f0" : "#444", border: `1px solid ${scalingMode === mode ? "#2a2a2a" : "transparent"}`, borderRadius: 5, cursor: "pointer" }}>
+                  {label}
                 </button>
               ))}
             </div>
 
-            {scaleMode === "custom" && (
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input type="range" min="0" max="1.5" step="0.05" value={customIntensity}
-                    onChange={(e) => setCustomIntensity(parseFloat(e.target.value))}
+            {scalingMode === "auto" ? (
+              <>
+                <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Compensation intensity</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                  <input type="range" min="0" max="1.5" step="0.05" value={autoIntensity}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      setAutoIntensity(Math.abs(v - 0.5) < 0.08 ? 0.5 : v);
+                    }}
                     style={{ flex: 1, accentColor: "#c9a55a" }} />
-                  <span style={{ fontSize: 11, color: "#c9a55a", minWidth: 30, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{customIntensity}</span>
+                  <span style={{ fontSize: 11, color: "#c9a55a", minWidth: 30, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{autoIntensity.toFixed(2)}</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#333", marginTop: 2 }}>
-                  <span>No compensation</span><span>Aggressive</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <span style={{ fontSize: 8, color: "#2a2a2a" }}>0</span>
+                  <button onClick={() => setAutoIntensity(0.5)}
+                    style={{ fontSize: 8, fontFamily: "'DM Mono', monospace", cursor: "pointer", padding: "2px 7px", borderRadius: 4, transition: "all 0.15s", background: Math.abs(autoIntensity - 0.5) < 0.03 ? "#16140e" : "transparent", color: Math.abs(autoIntensity - 0.5) < 0.03 ? "#c9a55a" : "#444", border: `1px solid ${Math.abs(autoIntensity - 0.5) < 0.03 ? "#3a2e1a" : "#252525"}` }}>
+                    {Math.abs(autoIntensity - 0.5) < 0.03 ? "★" : "◇"} recommended
+                  </button>
+                  <span style={{ fontSize: 8, color: "#2a2a2a" }}>1.5</span>
                 </div>
-              </div>
+                <div style={{ background: "#0e0e0e", borderRadius: 6, padding: "6px 4px 2px", border: "1px solid #191919" }}>
+                  <CurveGraph intensity={autoIntensity} refSize={refSize} refStroke={refStroke} sizes={activeSizes} />
+                </div>
+                <div style={{ fontSize: 8, color: "#2a2a2a", marginTop: 4, textAlign: "center" }}>
+                  stroke = detected × ({refSize}/size)^{autoIntensity.toFixed(2)}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 9, color: "#3a3a3a" }}>Stroke per size</div>
+                  <button onClick={seedManualFromAuto}
+                    style={{ fontSize: 9, color: "#555", background: "transparent", border: "1px solid #222", borderRadius: 4, padding: "2px 6px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+                    Reset to auto
+                  </button>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {activeSizes.map((size) => {
+                    const val = manualStrokes[size] ?? calcStroke(refStroke, refSize, size, autoIntensity);
+                    return (
+                      <div key={size} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 10, color: size === refSize ? "#f0f0f0" : "#4a4a4a", width: 22, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{size}</span>
+                        <input type="range" min="0.25" max="6" step="0.25" value={val}
+                          onChange={(e) => setManualStrokes((p) => ({ ...p, [size]: parseFloat(e.target.value) }))}
+                          style={{ flex: 1, accentColor: "#c9a55a" }} />
+                        <span style={{ fontSize: 10, color: "#c9a55a", minWidth: 28, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{val}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: 9, color: "#2a2a2a", marginTop: 8 }}>Applied to all icons</div>
+              </>
             )}
-
-            {/* Curve viz */}
-            <div style={{ background: "#0e0e0e", borderRadius: 6, padding: "6px 4px 2px", border: "1px solid #191919" }}>
-              <CurveGraph intensity={intensity} refSize={refSize} refStroke={refStroke} sizes={activeSizes} />
-            </div>
-            <div style={{ fontSize: 8, color: "#2a2a2a", marginTop: 4, textAlign: "center" }}>
-              stroke = {refStroke} × ({refSize}/size)^{intensity.toFixed(2)}
-            </div>
           </div>
 
           {/* Size toggles */}
@@ -501,174 +588,61 @@ export default function IconScaler() {
             </div>
           </div>
 
-          {/* Manual overrides */}
-          <div style={{ background: "#111", borderRadius: 8, padding: "12px 12px 14px", border: "1px solid #1a1a1a" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <div style={secLabel}>Manual Overrides</div>
-              {Object.keys(manualOverrides).length > 0 && (
-                <button onClick={() => setManualOverrides({})}
-                  style={{ fontSize: 9, color: "#555", background: "transparent", border: "1px solid #222", borderRadius: 4, padding: "2px 6px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
-                  Clear all
-                </button>
-              )}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              {activeSizes.map((size) => {
-                const auto = getAutoStroke(size);
-                const final = computedStrokes[size];
-                const isOverridden = manualOverrides[size] !== undefined;
-                return (
-                  <div key={size} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 10, color: size === refSize ? "#f0f0f0" : "#4a4a4a", width: 22, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{size}</span>
-                    <input type="range" min="0.25" max="6" step="0.25" value={final}
-                      onChange={(e) => setManualOverrides((p) => ({ ...p, [size]: parseFloat(e.target.value) }))}
-                      style={{ flex: 1, accentColor: isOverridden ? "#e07070" : "#3a3a3a" }} />
-                    <span style={{ fontSize: 10, color: isOverridden ? "#e07070" : "#4a4a4a", minWidth: 28, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                      {final}
-                    </span>
-                    {isOverridden ? (
-                      <button onClick={() => setManualOverrides((p) => { const n = { ...p }; delete n[size]; return n; })}
-                        title={`Reset to auto (${auto})`}
-                        style={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#555", cursor: "pointer", fontSize: 10, padding: 0 }}>
-                        ×
-                      </button>
-                    ) : (
-                      <div style={{ width: 16 }} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ fontSize: 8, color: "#2a2a2a", marginTop: 6 }}>Drag to override auto value · red = manual</div>
-          </div>
+          <div style={{ flex: 1 }} />
 
-          {/* Export button */}
-          <button onClick={exportAll} disabled={!isValid || activeSizes.length === 0}
-            style={{ width: "100%", padding: "10px 0", fontSize: 12, fontWeight: 500, fontFamily: "'DM Mono', monospace", background: isValid ? "#f0f0f0" : "#161616", color: isValid ? "#0a0a0a" : "#3a3a3a", border: "none", borderRadius: 7, cursor: isValid ? "pointer" : "not-allowed", marginTop: 4 }}>
-            Export All ({activeSizes.length})
+          <button onClick={exportAll} disabled={workspace.length === 0 || activeSizes.length === 0}
+            style={{ padding: "10px 0", fontSize: 11, fontWeight: 500, fontFamily: "'DM Mono', monospace", background: workspace.length > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "#161616", color: workspace.length > 0 ? "#7a9ad4" : "#3a3a3a", border: workspace.length > 0 ? "1px solid #253050" : "1px solid #1a1a1a", borderRadius: 7, cursor: workspace.length > 0 ? "pointer" : "not-allowed" }}>
+            {workspace.length > 0 ? `Export all (${workspace.length}) →` : "Export all →"}
           </button>
         </div>
 
         {/* ── Main Content ── */}
         <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
-          {showInput && (
-            <div style={{ marginBottom: 16 }}>
-              <textarea defaultValue={rawSvg} placeholder="Paste SVG code here…" onBlur={(e) => handleSvgInput(e.target.value)}
-                style={{ width: "100%", height: 105, background: "#111", color: "#777", border: "1px solid #1e1e1e", borderRadius: 8, padding: 12, fontSize: 11, fontFamily: "'DM Mono', monospace", resize: "vertical", outline: "none", boxSizing: "border-box" }} />
-            </div>
-          )}
-
-          {!isValid ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, border: "1px dashed #1e1e1e", borderRadius: 12, color: "#3a3a3a", fontSize: 12, gap: 14 }}>
-              <span>Drop an .svg, paste code, or browse the library</span>
-              <button onClick={() => setShowBrowser(true)} style={{ padding: "8px 18px", fontSize: 12, background: "#131313", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>◇ Browse Icons</button>
+          {workspace.length === 0 && !loadingWorkspace ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "calc(100vh - 110px)", color: "#3a3a3a", fontSize: 12, gap: 14 }}>
+              <div style={{ fontSize: 32, opacity: 0.2 }}>◇</div>
+              <span>Browse the icon library to add icons</span>
+              <button onClick={() => setShowBrowser(true)}
+                style={{ padding: "8px 18px", fontSize: 12, background: "#131313", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+                ◇ Browse Icons
+              </button>
             </div>
           ) : (
-            <>
-              {/* Tabs */}
-              <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "1px solid #1e1e1e" }}>
-                {["preview", "compare", "code"].map((t) => (
-                  <button key={t} onClick={() => setTab(t)}
-                    style={{ padding: "7px 14px", fontSize: 11, textTransform: "capitalize", background: "transparent", color: tab === t ? "#f0f0f0" : "#3a3a3a", border: "none", borderBottom: tab === t ? "1px solid #f0f0f0" : "1px solid transparent", cursor: "pointer", marginBottom: -1, fontFamily: "'DM Mono', monospace" }}>
-                    {t}
-                  </button>
-                ))}
+            <div>
+              {/* Column headers */}
+              <div style={{ display: "flex", alignItems: "center", padding: "0 0 8px", borderBottom: "1px solid #1a1a1a", marginBottom: 2 }}>
+                <div style={{ width: 156, flexShrink: 0, paddingRight: 16 }}>
+                  <span style={{ fontSize: 9, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" }}>Icon</span>
+                </div>
+                <div style={{ display: "flex", gap: 10, flex: 1, overflowX: "auto" }}>
+                  {activeSizes.map((size) => {
+                    const dim = Math.max(size + 16, 40);
+                    return (
+                      <div key={size} style={{ width: dim, flexShrink: 0, textAlign: "center" }}>
+                        <span style={{ fontSize: 9, color: size === refSize ? "#666" : "#2a2a2a", fontFamily: "'DM Mono', monospace" }}>{size}px</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ width: 46, flexShrink: 0 }} />
               </div>
 
-              {/* Preview Tab */}
-              {tab === "preview" && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 18, alignItems: "flex-end" }}>
-                  {activeSizes.map((size) => {
-                    const sw = computedStrokes[size];
-                    const svg = rewriteSvg(rawSvg, sw, size);
-                    const isOverridden = manualOverrides[size] !== undefined;
-                    const isRef = size === refSize;
-                    return (
-                      <div key={size} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                        <div style={{ position: "relative" }}>
-                          <SvgBox svgString={svg} size={size} />
-                          {isRef && <div style={{ position: "absolute", top: -4, right: -4, width: 8, height: 8, borderRadius: "50%", background: "#f0f0f0", border: "2px solid #0a0a0a" }} />}
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
-                          <span style={{ color: isRef ? "#f0f0f0" : "#4a4a4a" }}>{size}px</span>
-                          <span style={{ color: "#222" }}>·</span>
-                          <span style={{ color: isOverridden ? "#e07070" : "#c9a55a" }}>{sw}</span>
-                        </div>
-                        <div style={{ display: "flex", gap: 3 }}>
-                          <button onClick={() => copySvg(size)} style={tinyBtn(copied === size)}>{copied === size ? "✓" : "Copy"}</button>
-                          <button onClick={() => exportSvg(size)} style={tinyBtn(false)}>.svg</button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {workspace.map((item) => (
+                <WorkspaceRow
+                  key={item.id}
+                  item={item}
+                  activeSizes={activeSizes}
+                  getStrokeForSize={getStrokeForSize}
+                  onRemove={() => removeFromWorkspace(item.id)}
+                />
+              ))}
 
-              {/* Compare Tab */}
-              {tab === "compare" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: "#3a3a3a", marginBottom: 10, padding: "3px 8px", background: "#131313", borderRadius: 4, display: "inline-block" }}>
-                      Naive · uniform stroke: {baseStroke}
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-end" }}>
-                      {activeSizes.map((size) => (
-                        <div key={size} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                          <SvgBox svgString={rewriteSvg(rawSvg, baseStroke, size)} size={size} />
-                          <span style={{ fontSize: 9, color: "#3a3a3a" }}>{size}px · sw:{baseStroke}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: "#c9a55a", marginBottom: 10, padding: "3px 8px", background: "#16140e", borderRadius: 4, display: "inline-block" }}>
-                      Compensated · {SCALE_MODES[scaleMode].label} ({intensity})
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-end" }}>
-                      {activeSizes.map((size) => {
-                        const sw = computedStrokes[size];
-                        const isOverridden = manualOverrides[size] !== undefined;
-                        return (
-                          <div key={size} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                            <SvgBox svgString={rewriteSvg(rawSvg, sw, size)} size={size} />
-                            <span style={{ fontSize: 9, color: isOverridden ? "#e07070" : "#c9a55a" }}>{size}px · sw:{sw}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+              {loadingWorkspace && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 0", color: "#333", fontSize: 11 }}>
+                  <span>Loading icons…</span>
                 </div>
               )}
-
-              {/* Code Tab */}
-              {tab === "code" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {/* Token map */}
-                  <div style={{ background: "#111", borderRadius: 6, padding: 12, border: "1px solid #1a1a1a", marginBottom: 4 }}>
-                    <div style={{ fontSize: 10, color: "#4a4a4a", marginBottom: 6 }}>Design token map</div>
-                    <pre style={{ margin: 0, fontSize: 10, color: "#888", whiteSpace: "pre-wrap" }}>
-{`{
-${activeSizes.map((s) => `  "icon-${s}": { size: ${s}, strokeWidth: ${computedStrokes[s]} }`).join(",\n")}
-}`}
-                    </pre>
-                  </div>
-                  {activeSizes.map((size) => {
-                    const sw = computedStrokes[size];
-                    const svg = rewriteSvg(rawSvg, sw, size);
-                    return (
-                      <div key={size}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                          <span style={{ fontSize: 11, color: "#555" }}>{size}px</span>
-                          <span style={{ fontSize: 10, color: "#333" }}>stroke-width: {sw}</span>
-                          <button onClick={() => copySvg(size)} style={{ ...tinyBtn(copied === size), marginLeft: "auto" }}>{copied === size ? "Copied!" : "Copy"}</button>
-                        </div>
-                        <pre style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 6, padding: 10, fontSize: 10, color: "#4a4a4a", overflow: "auto", margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{svg}</pre>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -680,7 +654,4 @@ const secLabel = { fontSize: 9, color: "#444", textTransform: "uppercase", lette
 
 function pagBtn(d) {
   return { padding: "2px 8px", fontSize: 10, background: "transparent", color: d ? "#2a2a2a" : "#666", border: "1px solid #1e1e1e", borderRadius: 4, cursor: d ? "default" : "pointer", fontFamily: "'DM Mono', monospace" };
-}
-function tinyBtn(a) {
-  return { padding: "3px 8px", fontSize: 9, background: a ? "#152015" : "#131313", color: a ? "#6fcf6f" : "#4a4a4a", border: "1px solid #1e1e1e", borderRadius: 4, cursor: "pointer", fontFamily: "'DM Mono', monospace" };
 }
