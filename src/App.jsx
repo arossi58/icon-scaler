@@ -23,6 +23,8 @@ export default function App() {
     return Array.isArray(s.activeSizes) ? s.activeSizes : [12, 16, 20, 24, 32, 48];
   });
   const [manualStrokes, setManualStrokes] = useState(() => loadSaved().manualStrokes ?? {});
+  const [savedCurves, setSavedCurves] = useState(() => loadSaved().savedCurves ?? []);
+  const [curveName, setCurveName] = useState("");
   const [showBrowser, setShowBrowser] = useState(false);
   const [exportProgress, setExportProgress] = useState(null); // null | {done, total}
   const [dragOver, setDragOver] = useState(false);
@@ -30,12 +32,12 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes,
+        workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes, savedCurves,
       }));
     } catch (e) {
       console.warn("Failed to save state:", e.message);
     }
-  }, [workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes]);
+  }, [workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes, savedCurves]);
 
   const clearAll = useCallback(() => {
     setWorkspace([]);
@@ -81,6 +83,28 @@ export default function App() {
 
   const removeFromWorkspace = useCallback((id) => {
     setWorkspace((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const saveCurrentCurve = useCallback(() => {
+    const name = curveName.trim();
+    if (!name) return;
+    setSavedCurves((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name, refSize, refStroke, scalingMode, autoIntensity, manualStrokes },
+    ]);
+    setCurveName("");
+  }, [curveName, refSize, refStroke, scalingMode, autoIntensity, manualStrokes]);
+
+  const loadCurve = useCallback((curve) => {
+    setRefSize(curve.refSize);
+    setRefStroke(curve.refStroke);
+    setScalingMode(curve.scalingMode);
+    setAutoIntensity(curve.autoIntensity);
+    setManualStrokes(curve.manualStrokes);
+  }, []);
+
+  const deleteCurve = useCallback((id) => {
+    setSavedCurves((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
   const switchToAuto = useCallback(() => setScalingMode("auto"), []);
@@ -286,6 +310,37 @@ export default function App() {
                 <div className="manual-footer">Applied to all icons</div>
               </>
             )}
+          </div>
+
+          {/* Saved Curves */}
+          <div className="card">
+            <div className="sec-label">Saved Curves</div>
+            {savedCurves.length === 0 && (
+              <div className="curves-empty">No saved curves yet</div>
+            )}
+            {savedCurves.map((curve) => (
+              <div key={curve.id} className="curve-preset-row">
+                <span className="curve-preset-name">{curve.name}</span>
+                <span className="curve-preset-meta">
+                  {curve.scalingMode === "manual" ? "manual" : `auto · ${curve.autoIntensity.toFixed(2)}`}
+                </span>
+                <button onClick={() => loadCurve(curve)} className="curve-preset-load">Load</button>
+                <button onClick={() => deleteCurve(curve.id)} className="curve-preset-delete">×</button>
+              </div>
+            ))}
+            <div className="curve-save-row">
+              <input
+                type="text"
+                placeholder="Name this curve…"
+                value={curveName}
+                onChange={(e) => setCurveName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") saveCurrentCurve(); }}
+                className="curve-name-input"
+              />
+              <button onClick={saveCurrentCurve} disabled={!curveName.trim()} className="curve-save-btn">
+                Save
+              </button>
+            </div>
           </div>
 
           {/* Export Sizes */}
