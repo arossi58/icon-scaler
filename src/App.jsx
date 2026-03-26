@@ -129,12 +129,12 @@ function CurveGraph({ intensity, refSize, refStroke, sizes }) {
         return (
           <g key={s}>
             <circle cx={x(s)} cy={y(sw)} r={s === refSize ? 3.5 : 2.5} fill={s === refSize ? "#f0f0f0" : "#c9a55a"} />
-            <text x={x(s)} y={H - 6} textAnchor="middle" fontSize="7" fill="#444">{s}</text>
+            <text x={x(s)} y={H - 6} textAnchor="middle" fontSize="7" fill="#888">{s}</text>
           </g>
         );
       })}
-      <text x={4} y={10} fontSize="7" fill="#444">sw</text>
-      <text x={W - pad} y={H - 6} fontSize="7" fill="#444" textAnchor="end">px</text>
+      <text x={4} y={10} fontSize="7" fill="#888">sw</text>
+      <text x={W - pad} y={H - 6} fontSize="7" fill="#888" textAnchor="end">px</text>
     </svg>
   );
 }
@@ -210,7 +210,7 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
         <div style={{ display: "flex", borderBottom: "1px solid #1e1e1e", padding: "0 18px" }}>
           {Object.entries(ICON_LIBRARIES).map(([key, val]) => (
             <button key={key} onClick={() => { setLib(key); setSearch(""); }}
-              style={{ padding: "10px 16px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: "transparent", color: lib === key ? "#f0f0f0" : "#555", border: "none", borderBottom: lib === key ? "2px solid #f0f0f0" : "2px solid transparent", cursor: "pointer", marginBottom: -1, display: "flex", alignItems: "baseline", gap: 6 }}>
+              style={{ padding: "10px 16px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: "transparent", color: lib === key ? "#f0f0f0" : "#999", border: "none", borderBottom: lib === key ? "2px solid #f0f0f0" : "2px solid transparent", cursor: "pointer", marginBottom: -1, display: "flex", alignItems: "baseline", gap: 6 }}>
               {val.name}<span style={{ fontSize: 9, color: "#888" }}>{val.desc}</span>
             </button>
           ))}
@@ -251,7 +251,7 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
           )}
         </div>
         <div style={{ padding: "10px 18px", borderTop: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 8, background: "#0a0a0a" }}>
-          <span style={{ fontSize: 10, color: selected.size > 0 ? "#777" : "#333", fontFamily: "'DM Mono', monospace" }}>
+          <span style={{ fontSize: 10, color: selected.size > 0 ? "#999" : "#888", fontFamily: "'DM Mono', monospace" }}>
             {selected.size > 0 ? `${selected.size} icon${selected.size !== 1 ? "s" : ""} selected` : "Click icons to select"}
           </span>
           {selected.size > 0 && (
@@ -262,7 +262,7 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
           )}
           <div style={{ flex: 1 }} />
           <button onClick={handleAdd} disabled={selected.size === 0}
-            style={{ padding: "6px 14px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: selected.size > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "transparent", color: selected.size > 0 ? "#7a9ad4" : "#333", border: `1px solid ${selected.size > 0 ? "#253050" : "#1e1e1e"}`, borderRadius: 6, cursor: selected.size > 0 ? "pointer" : "default" }}>
+            style={{ padding: "6px 14px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: selected.size > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "transparent", color: selected.size > 0 ? "#7a9ad4" : "#888", border: `1px solid ${selected.size > 0 ? "#253050" : "#1e1e1e"}`, borderRadius: 6, cursor: selected.size > 0 ? "pointer" : "default" }}>
             {selected.size > 0 ? `Add ${selected.size} to workspace →` : "Add to workspace"}
           </button>
         </div>
@@ -287,7 +287,7 @@ function IconGridItem({ name, lib, onClick, isSelected, isInWorkspace }) {
         </div>
       )}
       <IconThumb lib={lib} name={name} />
-      <span style={{ fontSize: 8, color: isSelected ? "#5a9a5a" : "#4a4a4a", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'DM Mono', monospace" }}>{name}</span>
+      <span style={{ fontSize: 8, color: isSelected ? "#5a9a5a" : "#888", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'DM Mono', monospace" }}>{name}</span>
     </button>
   );
 }
@@ -346,8 +346,8 @@ function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRemove }) {
       </div>
       <button onClick={onRemove}
         style={{ marginLeft: 14, padding: "4px 8px", fontSize: 12, lineHeight: 1, background: "transparent", color: "#888", border: "1px solid #1a1a1a", borderRadius: 4, cursor: "pointer", fontFamily: "'DM Mono', monospace", flexShrink: 0, transition: "color 0.1s, border-color 0.1s" }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = "#666"; e.currentTarget.style.borderColor = "#2a2a2a"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = "#2a2a2a"; e.currentTarget.style.borderColor = "#1a1a1a"; }}>
+        onMouseEnter={(e) => { e.currentTarget.style.color = "#bbb"; e.currentTarget.style.borderColor = "#2a2a2a"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "#888"; e.currentTarget.style.borderColor = "#1a1a1a"; }}>
         ×
       </button>
     </div>
@@ -556,7 +556,7 @@ export default function IconScaler() {
               {[["auto", "Auto"], ["manual", "Manual"]].map(([mode, label]) => (
                 <button key={mode}
                   onClick={() => mode === "auto" ? switchToAuto() : switchToManual()}
-                  style={{ flex: 1, padding: "5px 0", fontSize: 11, fontFamily: "'DM Mono', monospace", background: scalingMode === mode ? "#1a1a1a" : "transparent", color: scalingMode === mode ? "#f0f0f0" : "#444", border: `1px solid ${scalingMode === mode ? "#2a2a2a" : "transparent"}`, borderRadius: 5, cursor: "pointer" }}>
+                  style={{ flex: 1, padding: "5px 0", fontSize: 11, fontFamily: "'DM Mono', monospace", background: scalingMode === mode ? "#1a1a1a" : "transparent", color: scalingMode === mode ? "#f0f0f0" : "#999", border: `1px solid ${scalingMode === mode ? "#2a2a2a" : "transparent"}`, borderRadius: 5, cursor: "pointer" }}>
                   {label}
                 </button>
               ))}
@@ -577,7 +577,7 @@ export default function IconScaler() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <span style={{ fontSize: 8, color: "#888" }}>0</span>
                   <button onClick={() => setAutoIntensity(0.5)}
-                    style={{ fontSize: 8, fontFamily: "'DM Mono', monospace", cursor: "pointer", padding: "2px 7px", borderRadius: 4, transition: "all 0.15s", background: Math.abs(autoIntensity - 0.5) < 0.03 ? "#16140e" : "transparent", color: Math.abs(autoIntensity - 0.5) < 0.03 ? "#c9a55a" : "#444", border: `1px solid ${Math.abs(autoIntensity - 0.5) < 0.03 ? "#3a2e1a" : "#252525"}` }}>
+                    style={{ fontSize: 8, fontFamily: "'DM Mono', monospace", cursor: "pointer", padding: "2px 7px", borderRadius: 4, transition: "all 0.15s", background: Math.abs(autoIntensity - 0.5) < 0.03 ? "#16140e" : "transparent", color: Math.abs(autoIntensity - 0.5) < 0.03 ? "#c9a55a" : "#999", border: `1px solid ${Math.abs(autoIntensity - 0.5) < 0.03 ? "#3a2e1a" : "#252525"}` }}>
                     {Math.abs(autoIntensity - 0.5) < 0.03 ? "★" : "◇"} recommended
                   </button>
                   <span style={{ fontSize: 8, color: "#888" }}>1.5</span>
@@ -603,7 +603,7 @@ export default function IconScaler() {
                     const val = manualStrokes[size] ?? calcStroke(refStroke, refSize, size, autoIntensity);
                     return (
                       <div key={size} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 10, color: size === refSize ? "#f0f0f0" : "#4a4a4a", width: 22, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{size}</span>
+                        <span style={{ fontSize: 10, color: size === refSize ? "#f0f0f0" : "#999", width: 22, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{size}</span>
                         <input type="range" min="0.25" max="6" step="0.25" value={val}
                           onChange={(e) => setManualStrokes((p) => ({ ...p, [size]: parseFloat(e.target.value) }))}
                           style={{ flex: 1, accentColor: "#c9a55a" }} />
@@ -625,7 +625,7 @@ export default function IconScaler() {
                 const active = activeSizes.includes(s);
                 return (
                   <button key={s} onClick={() => toggleSize(s)}
-                    style={{ padding: "4px 9px", fontSize: 11, background: active ? "#1e1e1e" : "transparent", color: active ? "#f0f0f0" : "#333", border: `1px solid ${active ? "#333" : "#191919"}`, borderRadius: 5, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+                    style={{ padding: "4px 9px", fontSize: 11, background: active ? "#1e1e1e" : "transparent", color: active ? "#f0f0f0" : "#888", border: `1px solid ${active ? "#333" : "#191919"}`, borderRadius: 5, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
                     {s}
                   </button>
                 );
@@ -636,7 +636,7 @@ export default function IconScaler() {
           <div style={{ flex: 1 }} />
 
           <button onClick={exportAll} disabled={workspace.length === 0 || activeSizes.length === 0}
-            style={{ padding: "10px 0", fontSize: 11, fontWeight: 500, fontFamily: "'DM Mono', monospace", background: workspace.length > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "#161616", color: workspace.length > 0 ? "#7a9ad4" : "#3a3a3a", border: workspace.length > 0 ? "1px solid #253050" : "1px solid #1a1a1a", borderRadius: 7, cursor: workspace.length > 0 ? "pointer" : "not-allowed" }}>
+            style={{ padding: "10px 0", fontSize: 11, fontWeight: 500, fontFamily: "'DM Mono', monospace", background: workspace.length > 0 ? "linear-gradient(135deg, #161625, #131a2e)" : "#161616", color: workspace.length > 0 ? "#7a9ad4" : "#888", border: workspace.length > 0 ? "1px solid #253050" : "1px solid #1a1a1a", borderRadius: 7, cursor: workspace.length > 0 ? "pointer" : "not-allowed" }}>
             {workspace.length > 0 ? `Export all (${workspace.length}) →` : "Export all →"}
           </button>
         </div>
@@ -664,7 +664,7 @@ export default function IconScaler() {
                     const dim = Math.max(size + 16, 40);
                     return (
                       <div key={size} style={{ width: dim, flexShrink: 0, textAlign: "center" }}>
-                        <span style={{ fontSize: 9, color: size === refSize ? "#666" : "#2a2a2a", fontFamily: "'DM Mono', monospace" }}>{size}px</span>
+                        <span style={{ fontSize: 9, color: size === refSize ? "#999" : "#888", fontFamily: "'DM Mono', monospace" }}>{size}px</span>
                       </div>
                     );
                   })}
@@ -698,5 +698,5 @@ export default function IconScaler() {
 const secLabel = { fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 };
 
 function pagBtn(d) {
-  return { padding: "2px 8px", fontSize: 10, background: "transparent", color: d ? "#2a2a2a" : "#666", border: "1px solid #1e1e1e", borderRadius: 4, cursor: d ? "default" : "pointer", fontFamily: "'DM Mono', monospace" };
+  return { padding: "2px 8px", fontSize: 10, background: "transparent", color: d ? "#888" : "#999", border: "1px solid #1e1e1e", borderRadius: 4, cursor: d ? "default" : "pointer", fontFamily: "'DM Mono', monospace" };
 }
