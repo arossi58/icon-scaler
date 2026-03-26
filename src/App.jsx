@@ -25,6 +25,7 @@ export default function App() {
   const [manualStrokes, setManualStrokes] = useState(() => loadSaved().manualStrokes ?? {});
   const [savedCurves, setSavedCurves] = useState(() => loadSaved().savedCurves ?? []);
   const [curveName, setCurveName] = useState("");
+  const [iconColor, setIconColor] = useState(() => loadSaved().iconColor ?? "");
   const [showBrowser, setShowBrowser] = useState(false);
   const [exportProgress, setExportProgress] = useState(null); // null | {done, total}
   const [dragOver, setDragOver] = useState(false);
@@ -32,12 +33,12 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes, savedCurves,
+        workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes, savedCurves, iconColor,
       }));
     } catch (e) {
       console.warn("Failed to save state:", e.message);
     }
-  }, [workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes, savedCurves]);
+  }, [workspace, refSize, refStroke, scalingMode, autoIntensity, activeSizes, manualStrokes, savedCurves, iconColor]);
 
   const clearAll = useCallback(() => {
     setWorkspace([]);
@@ -160,7 +161,7 @@ export default function App() {
       const { name, svgText } = workspace[i];
       activeSizes.forEach((size) => {
         const sw = getStrokeForSize(size);
-        zip.file(`${name}-${size}px.svg`, rewriteSvg(svgText, sw, size));
+        zip.file(`${name}-${size}px.svg`, rewriteSvg(svgText, sw, size, iconColor));
       });
       setExportProgress({ done: i + 1, total: workspace.length });
     }
@@ -170,7 +171,7 @@ export default function App() {
     a.href = url; a.download = "icons.zip"; a.click();
     URL.revokeObjectURL(url);
     setExportProgress(null);
-  }, [workspace, activeSizes, getStrokeForSize]);
+  }, [workspace, activeSizes, getStrokeForSize, iconColor]);
 
   const isNearRecommended = Math.abs(autoIntensity - RECOMMENDED_INTENSITY) < 0.03;
 
@@ -310,6 +311,36 @@ export default function App() {
                 <div className="manual-footer">Applied to all icons</div>
               </>
             )}
+          </div>
+
+          {/* Color */}
+          <div className="card">
+            <div className="sec-label">Color</div>
+            <div className="color-row">
+              <div className="color-swatch-wrap">
+                <div className="color-swatch-bg">
+                  <div className="color-swatch-fg" style={iconColor ? { background: iconColor } : {}} />
+                </div>
+                <input
+                  type="color"
+                  value={/^#[0-9a-fA-F]{6}$/.test(iconColor) ? iconColor : "#e0e0e0"}
+                  onChange={(e) => setIconColor(e.target.value)}
+                  className="color-picker-hidden"
+                />
+              </div>
+              <input
+                type="text"
+                value={iconColor}
+                onChange={(e) => setIconColor(e.target.value)}
+                placeholder="currentColor"
+                className="color-text-input"
+                spellCheck={false}
+              />
+              {iconColor && (
+                <button onClick={() => setIconColor("")} className="color-clear-btn">×</button>
+              )}
+            </div>
+            <div className="color-hint">#hex · rgb() · oklch() · var(--token)</div>
           </div>
 
           {/* Saved Curves */}
@@ -455,6 +486,7 @@ export default function App() {
                   activeSizes={activeSizes}
                   getStrokeForSize={getStrokeForSize}
                   onRemove={() => removeFromWorkspace(item.id)}
+                  iconColor={iconColor}
                 />
               ))}
 

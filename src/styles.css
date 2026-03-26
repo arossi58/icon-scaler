@@ -291,6 +291,77 @@ input[type="range"].range-flex {
   margin-top: 8px;
 }
 
+/* ── Color ── */
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.color-swatch-wrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.color-swatch-bg {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  border: 1px solid #2a2a2a;
+  background: repeating-conic-gradient(#1e1e1e 0% 25%, #2a2a2a 0% 50%) 0 0 / 8px 8px;
+  overflow: hidden;
+}
+
+.color-swatch-fg {
+  width: 100%;
+  height: 100%;
+}
+
+.color-picker-hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-text-input {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 11px;
+  background: #181818;
+  color: #ccc;
+  border: 1px solid #252525;
+  border-radius: 5px;
+  outline: none;
+  min-width: 0;
+}
+
+.color-clear-btn {
+  font-size: 13px;
+  color: #555;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.color-clear-btn:hover {
+  color: #888;
+}
+
+.color-hint {
+  font-size: 9px;
+  color: #555;
+}
+
 /* ── Saved Curves ── */
 .curves-empty {
   font-size: 10px;

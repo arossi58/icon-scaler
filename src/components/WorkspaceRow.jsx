@@ -2,7 +2,7 @@ import { ICON_LIBRARIES } from "../constants.js";
 import { rewriteSvg } from "../svg.js";
 import SvgBox from "./SvgBox.jsx";
 
-export default function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRemove }) {
+export default function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRemove, iconColor }) {
   const { name, lib, svgText, detectedStroke } = item;
   return (
     <div className="workspace-row">
@@ -18,7 +18,7 @@ export default function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRe
           const svg = rewriteSvg(svgText, sw, size);
           return (
             <div key={size} className="workspace-row-preview">
-              <SvgBox svgString={svg} size={size} />
+              <SvgBox svgString={svg} size={size} color={iconColor} />
               <span className="workspace-row-stroke">{sw}</span>
             </div>
           );

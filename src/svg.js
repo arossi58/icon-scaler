@@ -38,7 +38,7 @@ export function hasSvgStrokes(svgEl) {
   return false;
 }
 
-export function rewriteSvg(raw, strokeWidth, size) {
+export function rewriteSvg(raw, strokeWidth, size, color = "") {
   const parsed = parseSvg(raw);
   if (!parsed) return raw;
   const { svg, viewBox } = parsed;
@@ -56,6 +56,7 @@ export function rewriteSvg(raw, strokeWidth, size) {
     // Suppress stroke on fill="none" elements to avoid unwanted box outlines.
     clone.querySelectorAll("[fill='none']").forEach((el) => el.setAttribute("stroke", "none"));
   }
+  if (color) clone.style.color = color;
   clone.setAttribute("stroke-width", nativeSw);
   clone.querySelectorAll("*").forEach((el) => {
     if (el.getAttribute("stroke-width") !== null) el.setAttribute("stroke-width", nativeSw);
