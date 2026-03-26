@@ -61,14 +61,15 @@ function rewriteSvg(raw, strokeWidth, size) {
   clone.setAttribute("width", size);
   clone.setAttribute("height", size);
   clone.setAttribute("viewBox", viewBox.join(" "));
-  // Always set stroke-width on root so it applies to all inheriting children
-  clone.setAttribute("stroke-width", strokeWidth);
-  // Also override any child elements that have their own explicit stroke-width
+  // Convert strokeWidth (in screen-pixel terms) to the icon's native coordinate space.
+  // e.g. Phosphor uses a 256×256 viewBox: stroke-width="2" at 24px → 2*(256/24) ≈ 21.3 native units.
+  const nativeSw = Math.round((strokeWidth * (viewBox[2] / size)) * 1000) / 1000;
+  clone.setAttribute("stroke-width", nativeSw);
   clone.querySelectorAll("*").forEach((el) => {
-    if (el.getAttribute("stroke-width") !== null) el.setAttribute("stroke-width", strokeWidth);
+    if (el.getAttribute("stroke-width") !== null) el.setAttribute("stroke-width", nativeSw);
     const st = el.getAttribute("style");
     if (st && st.includes("stroke-width"))
-      el.setAttribute("style", st.replace(/stroke-width:\s*[^;]+/g, `stroke-width: ${strokeWidth}`));
+      el.setAttribute("style", st.replace(/stroke-width:\s*[^;]+/g, `stroke-width: ${nativeSw}`));
   });
   return new XMLSerializer().serializeToString(clone);
 }
@@ -76,11 +77,14 @@ function rewriteSvg(raw, strokeWidth, size) {
 function detectBaseStroke(raw) {
   const parsed = parseSvg(raw);
   if (!parsed) return 2;
-  const { svg } = parsed;
+  const { svg, viewBox } = parsed;
+  // Normalize raw stroke-width to screen-pixel terms at 24px reference size,
+  // so a Phosphor stroke-width="16" in a 256-unit viewBox → 16*(24/256) = 1.5
+  const normalize = (sw) => Math.round(sw * (24 / viewBox[2]) * 100) / 100;
   const rootSw = svg.getAttribute("stroke-width");
-  if (rootSw) return parseFloat(rootSw);
+  if (rootSw) return normalize(parseFloat(rootSw));
   const first = svg.querySelector("[stroke-width]");
-  if (first) return parseFloat(first.getAttribute("stroke-width"));
+  if (first) return normalize(parseFloat(first.getAttribute("stroke-width")));
   return 2;
 }
 
