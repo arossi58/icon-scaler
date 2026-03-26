@@ -4,8 +4,8 @@ export default function CurveGraph({ intensity, refSize, refStroke, sizes }) {
   const W = 200, H = 80, pad = 24;
   const minS = Math.min(...sizes, refSize), maxS = Math.max(...sizes, refSize);
   const x = (s) => pad + ((s - minS) / (maxS - minS)) * (W - pad * 2);
-  const maxSw = refStroke * Math.pow(refSize / minS, Math.max(intensity, 0.01));
-  const minSw = refStroke * Math.pow(refSize / maxS, Math.max(intensity, 0.01));
+  const maxSw = refStroke * Math.pow(maxS / refSize, Math.max(intensity, 0.01));
+  const minSw = refStroke * Math.pow(minS / refSize, Math.max(intensity, 0.01));
   const swRange = Math.max(maxSw - minSw, 0.1);
   const y = (sw) => H - pad - ((sw - minSw + 0.2) / (swRange + 0.4)) * (H - pad * 2);
 

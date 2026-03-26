@@ -1,8 +1,8 @@
 export function calcStroke(refStroke, refSize, targetSize, intensity) {
   if (intensity === 0 || targetSize === refSize) return refStroke;
-  const ratio = refSize / targetSize;
-  const compensated = refStroke * Math.pow(ratio, intensity);
-  return Math.round(compensated * 100) / 100;
+  const ratio = targetSize / refSize;
+  const scaled = refStroke * Math.pow(ratio, intensity);
+  return Math.round(scaled * 100) / 100;
 }
 
 export function parseSvg(raw) {

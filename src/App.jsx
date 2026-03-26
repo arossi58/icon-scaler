@@ -6,7 +6,7 @@ import IconBrowser from "./components/IconBrowser.jsx";
 import WorkspaceRow from "./components/WorkspaceRow.jsx";
 import CurveGraph from "./components/CurveGraph.jsx";
 
-const RECOMMENDED_INTENSITY = 0.2;
+const RECOMMENDED_INTENSITY = 0.5;
 
 export default function App() {
   const [workspace, setWorkspace] = useState(() => {
@@ -284,7 +284,7 @@ export default function App() {
                   <CurveGraph intensity={autoIntensity} refSize={refSize} refStroke={refStroke} sizes={activeSizes} />
                 </div>
                 <div className="curve-label">
-                  stroke = detected × ({refSize}/size)^{autoIntensity.toFixed(2)}
+                  stroke = detected × (size/{refSize})^{autoIntensity.toFixed(2)}
                 </div>
               </>
             ) : (
