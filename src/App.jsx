@@ -203,15 +203,15 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
           <span style={{ fontSize: 13, fontWeight: 500, color: "#f0f0f0", fontFamily: "'DM Mono', monospace" }}>Icon Library</span>
           <div style={{ flex: 1 }} />
           {selected.size > 0 && (
-            <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Mono', monospace" }}>{selected.size} selected</span>
+            <span style={{ fontSize: 10, color: "#999", fontFamily: "'DM Mono', monospace" }}>{selected.size} selected</span>
           )}
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#555", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#999", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
         <div style={{ display: "flex", borderBottom: "1px solid #1e1e1e", padding: "0 18px" }}>
           {Object.entries(ICON_LIBRARIES).map(([key, val]) => (
             <button key={key} onClick={() => { setLib(key); setSearch(""); }}
               style={{ padding: "10px 16px", fontSize: 11, fontFamily: "'DM Mono', monospace", background: "transparent", color: lib === key ? "#f0f0f0" : "#555", border: "none", borderBottom: lib === key ? "2px solid #f0f0f0" : "2px solid transparent", cursor: "pointer", marginBottom: -1, display: "flex", alignItems: "baseline", gap: 6 }}>
-              {val.name}<span style={{ fontSize: 9, color: "#3a3a3a" }}>{val.desc}</span>
+              {val.name}<span style={{ fontSize: 9, color: "#888" }}>{val.desc}</span>
             </button>
           ))}
         </div>
@@ -219,11 +219,11 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
           <input ref={searchRef} type="text" placeholder="Search icons…" value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ width: "100%", padding: "9px 12px", fontSize: 12, fontFamily: "'DM Mono', monospace", background: "#141414", color: "#ccc", border: "1px solid #252525", borderRadius: 7, outline: "none", boxSizing: "border-box" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-            <span style={{ fontSize: 10, color: "#3a3a3a" }}>{loading ? "Loading…" : `${filtered.length} icons`}{search && !loading ? ` matching "${search}"` : ""}</span>
+            <span style={{ fontSize: 10, color: "#888" }}>{loading ? "Loading…" : `${filtered.length} icons`}{search && !loading ? ` matching "${search}"` : ""}</span>
             {totalPages > 1 && (
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} style={pagBtn(page === 0)}>‹</button>
-                <span style={{ fontSize: 10, color: "#555", fontVariantNumeric: "tabular-nums" }}>{page + 1}/{totalPages}</span>
+                <span style={{ fontSize: 10, color: "#999", fontVariantNumeric: "tabular-nums" }}>{page + 1}/{totalPages}</span>
                 <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={pagBtn(page >= totalPages - 1)}>›</button>
               </div>
             )}
@@ -232,9 +232,9 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
         {error && <div style={{ padding: "6px 18px", fontSize: 11, color: "#e07070" }}>{error}</div>}
         <div style={{ flex: 1, overflow: "auto", padding: "6px 18px 18px" }}>
           {loading ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, color: "#3a3a3a", fontSize: 12 }}>Fetching icon list…</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, color: "#888", fontSize: 12 }}>Fetching icon list…</div>
           ) : filtered.length === 0 ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 120, color: "#333", fontSize: 12 }}>No icons match "{search}"</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 120, color: "#888", fontSize: 12 }}>No icons match "{search}"</div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 3 }}>
               {pageIcons.map((name) => {
@@ -256,7 +256,7 @@ function IconBrowser({ onAddToWorkspace, onClose, existingIds }) {
           </span>
           {selected.size > 0 && (
             <button onClick={() => setSelected(new Set())}
-              style={{ fontSize: 9, color: "#555", background: "transparent", border: "1px solid #252525", borderRadius: 4, padding: "2px 7px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+              style={{ fontSize: 9, color: "#999", background: "transparent", border: "1px solid #252525", borderRadius: 4, padding: "2px 7px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
               Clear
             </button>
           )}
@@ -318,7 +318,7 @@ function IconThumb({ lib, name }) {
   }, [lib, name]);
   return (
     <div ref={ref} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#bbb" }}>
-      {svg ? <span dangerouslySetInnerHTML={{ __html: svg }} /> : <span style={{ fontSize: 10, color: "#2a2a2a" }}>·</span>}
+      {svg ? <span dangerouslySetInnerHTML={{ __html: svg }} /> : <span style={{ fontSize: 10, color: "#888" }}>·</span>}
     </div>
   );
 }
@@ -330,7 +330,7 @@ function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRemove }) {
     <div style={{ display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #161616" }}>
       <div style={{ width: 156, flexShrink: 0, paddingRight: 16 }}>
         <div style={{ fontSize: 11, color: "#d0d0d0", fontFamily: "'DM Mono', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
-        <div style={{ fontSize: 9, color: "#333", fontFamily: "'DM Mono', monospace", marginTop: 2 }}>{ICON_LIBRARIES[lib]?.name ?? lib} · detected:{detectedStroke}</div>
+        <div style={{ fontSize: 9, color: "#888", fontFamily: "'DM Mono', monospace", marginTop: 2 }}>{ICON_LIBRARIES[lib]?.name ?? lib} · detected:{detectedStroke}</div>
       </div>
       <div style={{ display: "flex", gap: 10, flex: 1, alignItems: "flex-end", overflowX: "auto", paddingBottom: 2 }}>
         {activeSizes.map((size) => {
@@ -345,7 +345,7 @@ function WorkspaceRow({ item, activeSizes, getStrokeForSize, onRemove }) {
         })}
       </div>
       <button onClick={onRemove}
-        style={{ marginLeft: 14, padding: "4px 8px", fontSize: 12, lineHeight: 1, background: "transparent", color: "#2a2a2a", border: "1px solid #1a1a1a", borderRadius: 4, cursor: "pointer", fontFamily: "'DM Mono', monospace", flexShrink: 0, transition: "color 0.1s, border-color 0.1s" }}
+        style={{ marginLeft: 14, padding: "4px 8px", fontSize: 12, lineHeight: 1, background: "transparent", color: "#888", border: "1px solid #1a1a1a", borderRadius: 4, cursor: "pointer", fontFamily: "'DM Mono', monospace", flexShrink: 0, transition: "color 0.1s, border-color 0.1s" }}
         onMouseEnter={(e) => { e.currentTarget.style.color = "#666"; e.currentTarget.style.borderColor = "#2a2a2a"; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = "#2a2a2a"; e.currentTarget.style.borderColor = "#1a1a1a"; }}>
         ×
@@ -494,7 +494,7 @@ export default function IconScaler() {
             <div style={{ width: 200, height: 2, background: "#1e1e1e", borderRadius: 1, overflow: "hidden", marginBottom: 8 }}>
               <div style={{ height: "100%", background: "#7a9ad4", borderRadius: 1, width: `${(exportProgress.done / exportProgress.total) * 100}%`, transition: "width 0.1s" }} />
             </div>
-            <div style={{ fontSize: 10, color: "#555", fontVariantNumeric: "tabular-nums" }}>{exportProgress.done} / {exportProgress.total}</div>
+            <div style={{ fontSize: 10, color: "#999", fontVariantNumeric: "tabular-nums" }}>{exportProgress.done} / {exportProgress.total}</div>
           </div>
         </div>
       )}
@@ -507,12 +507,12 @@ export default function IconScaler() {
           </div>
           <span style={{ fontSize: 13, fontWeight: 500, color: "#f0f0f0" }}>Icon Scaler</span>
           {workspace.length > 0 && (
-            <span style={{ fontSize: 10, color: "#3a3a3a" }}>{workspace.length} icon{workspace.length !== 1 ? "s" : ""}</span>
+            <span style={{ fontSize: 10, color: "#888" }}>{workspace.length} icon{workspace.length !== 1 ? "s" : ""}</span>
           )}
         </div>
         {workspace.length > 0 && (
           <button onClick={clearAll}
-            style={{ padding: "6px 14px", fontSize: 11, background: "transparent", color: "#444", border: "1px solid #222", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+            style={{ padding: "6px 14px", fontSize: 11, background: "transparent", color: "#999", border: "1px solid #222", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
             Clear all
           </button>
         )}
@@ -531,7 +531,7 @@ export default function IconScaler() {
             <div style={secLabel}>Reference</div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Design size</div>
+                <div style={{ fontSize: 9, color: "#888", marginBottom: 4 }}>Design size</div>
                 <select value={refSize} onChange={(e) => setRefSize(Number(e.target.value))}
                   style={{ width: "100%", padding: "5px 6px", fontSize: 11, background: "#181818", color: "#ccc", border: "1px solid #252525", borderRadius: 5, outline: "none", fontFamily: "'DM Mono', monospace" }}>
                   {PRESET_SIZES.map((s) => <option key={s} value={s}>{s}px</option>)}
@@ -541,11 +541,11 @@ export default function IconScaler() {
                 <span style={{ fontSize: 15, fontWeight: 500, color: "#c9a55a", fontVariantNumeric: "tabular-nums" }}>{refStroke}</span>
               </div>
             </div>
-            <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Base stroke weight</div>
+            <div style={{ fontSize: 9, color: "#888", marginBottom: 4 }}>Base stroke weight</div>
             <input type="range" min="0.25" max="8" step="0.25" value={refStroke}
               onChange={(e) => setRefStroke(parseFloat(e.target.value))}
               style={{ width: "100%", accentColor: "#c9a55a" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#2a2a2a", marginTop: 2 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#888", marginTop: 2 }}>
               <span>0.25</span><span>8</span>
             </div>
           </div>
@@ -564,7 +564,7 @@ export default function IconScaler() {
 
             {scalingMode === "auto" ? (
               <>
-                <div style={{ fontSize: 9, color: "#3a3a3a", marginBottom: 4 }}>Compensation intensity</div>
+                <div style={{ fontSize: 9, color: "#888", marginBottom: 4 }}>Compensation intensity</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
                   <input type="range" min="0" max="1.5" step="0.05" value={autoIntensity}
                     onChange={(e) => {
@@ -575,26 +575,26 @@ export default function IconScaler() {
                   <span style={{ fontSize: 11, color: "#c9a55a", minWidth: 30, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{autoIntensity.toFixed(2)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ fontSize: 8, color: "#2a2a2a" }}>0</span>
+                  <span style={{ fontSize: 8, color: "#888" }}>0</span>
                   <button onClick={() => setAutoIntensity(0.5)}
                     style={{ fontSize: 8, fontFamily: "'DM Mono', monospace", cursor: "pointer", padding: "2px 7px", borderRadius: 4, transition: "all 0.15s", background: Math.abs(autoIntensity - 0.5) < 0.03 ? "#16140e" : "transparent", color: Math.abs(autoIntensity - 0.5) < 0.03 ? "#c9a55a" : "#444", border: `1px solid ${Math.abs(autoIntensity - 0.5) < 0.03 ? "#3a2e1a" : "#252525"}` }}>
                     {Math.abs(autoIntensity - 0.5) < 0.03 ? "★" : "◇"} recommended
                   </button>
-                  <span style={{ fontSize: 8, color: "#2a2a2a" }}>1.5</span>
+                  <span style={{ fontSize: 8, color: "#888" }}>1.5</span>
                 </div>
                 <div style={{ background: "#0e0e0e", borderRadius: 6, padding: "6px 4px 2px", border: "1px solid #191919" }}>
                   <CurveGraph intensity={autoIntensity} refSize={refSize} refStroke={refStroke} sizes={activeSizes} />
                 </div>
-                <div style={{ fontSize: 8, color: "#2a2a2a", marginTop: 4, textAlign: "center" }}>
+                <div style={{ fontSize: 8, color: "#888", marginTop: 4, textAlign: "center" }}>
                   stroke = detected × ({refSize}/size)^{autoIntensity.toFixed(2)}
                 </div>
               </>
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: 9, color: "#3a3a3a" }}>Stroke per size</div>
+                  <div style={{ fontSize: 9, color: "#888" }}>Stroke per size</div>
                   <button onClick={seedManualFromAuto}
-                    style={{ fontSize: 9, color: "#555", background: "transparent", border: "1px solid #222", borderRadius: 4, padding: "2px 6px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+                    style={{ fontSize: 9, color: "#999", background: "transparent", border: "1px solid #222", borderRadius: 4, padding: "2px 6px", cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
                     Reset to auto
                   </button>
                 </div>
@@ -612,7 +612,7 @@ export default function IconScaler() {
                     );
                   })}
                 </div>
-                <div style={{ fontSize: 9, color: "#2a2a2a", marginTop: 8 }}>Applied to all icons</div>
+                <div style={{ fontSize: 9, color: "#888", marginTop: 8 }}>Applied to all icons</div>
               </>
             )}
           </div>
@@ -644,7 +644,7 @@ export default function IconScaler() {
         {/* ── Main Content ── */}
         <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
           {workspace.length === 0 && !loadingWorkspace ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "calc(100vh - 110px)", color: "#3a3a3a", fontSize: 12, gap: 14 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "calc(100vh - 110px)", color: "#888", fontSize: 12, gap: 14 }}>
               <div style={{ fontSize: 32, opacity: 0.2 }}>◇</div>
               <span>Browse the icon library to add icons</span>
               <button onClick={() => setShowBrowser(true)}
@@ -657,7 +657,7 @@ export default function IconScaler() {
               {/* Column headers */}
               <div style={{ display: "flex", alignItems: "center", padding: "0 0 8px", borderBottom: "1px solid #1a1a1a", marginBottom: 2 }}>
                 <div style={{ width: 156, flexShrink: 0, paddingRight: 16 }}>
-                  <span style={{ fontSize: 9, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" }}>Icon</span>
+                  <span style={{ fontSize: 9, color: "#888", textTransform: "uppercase", letterSpacing: "0.1em" }}>Icon</span>
                 </div>
                 <div style={{ display: "flex", gap: 10, flex: 1, overflowX: "auto" }}>
                   {activeSizes.map((size) => {
@@ -683,7 +683,7 @@ export default function IconScaler() {
               ))}
 
               {loadingWorkspace && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 0", color: "#333", fontSize: 11 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 0", color: "#888", fontSize: 11 }}>
                   <span>Loading icons…</span>
                 </div>
               )}
@@ -695,7 +695,7 @@ export default function IconScaler() {
   );
 }
 
-const secLabel = { fontSize: 9, color: "#444", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 };
+const secLabel = { fontSize: 9, color: "#999", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 };
 
 function pagBtn(d) {
   return { padding: "2px 8px", fontSize: 10, background: "transparent", color: d ? "#2a2a2a" : "#666", border: "1px solid #1e1e1e", borderRadius: 4, cursor: d ? "default" : "pointer", fontFamily: "'DM Mono', monospace" };
