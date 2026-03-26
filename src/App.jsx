@@ -397,6 +397,7 @@ export default function IconScaler() {
   const [manualStrokes, setManualStrokes] = useState(() => loadSaved().manualStrokes ?? {});
   const [showBrowser, setShowBrowser] = useState(false);
   const [exportProgress, setExportProgress] = useState(null); // null | {done, total}
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     const l = document.createElement("link");
@@ -479,6 +480,28 @@ export default function IconScaler() {
 
   const toggleSize = (s) => setActiveSizes((p) => p.includes(s) ? p.filter((x) => x !== s) : [...p, s].sort((a, b) => a - b));
 
+  const handleUploadFiles = useCallback(async (files) => {
+    const svgFiles = [...files].filter((f) => f.name.toLowerCase().endsWith(".svg") || f.type === "image/svg+xml");
+    if (svgFiles.length === 0) return;
+    setLoadingWorkspace(true);
+    const newItems = [];
+    for (const file of svgFiles) {
+      try {
+        const text = await file.text();
+        const name = file.name.replace(/\.svg$/i, "");
+        const id = `upload:${name}`;
+        newItems.push({ id, lib: "upload", name, svgText: text, detectedStroke: detectBaseStroke(text) });
+      } catch (e) {
+        console.warn(`Failed to read ${file.name}:`, e.message);
+      }
+    }
+    setWorkspace((prev) => {
+      const existing = new Set(prev.map((item) => item.id));
+      return [...prev, ...newItems.filter((item) => !existing.has(item.id))];
+    });
+    setLoadingWorkspace(false);
+  }, []);
+
   const exportAll = useCallback(async () => {
     if (workspace.length === 0 || activeSizes.length === 0) return;
     setExportProgress({ done: 0, total: workspace.length });
@@ -541,6 +564,11 @@ export default function IconScaler() {
             Clear all
           </button>
         )}
+        <label style={{ padding: "6px 14px", fontSize: 11, background: "transparent", color: "#999", border: "1px solid #222", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+          ↑ Upload SVG
+          <input type="file" accept=".svg,image/svg+xml" multiple style={{ display: "none" }}
+            onChange={(e) => { handleUploadFiles(e.target.files); e.target.value = ""; }} />
+        </label>
         <button onClick={() => setShowBrowser(true)}
           style={{ padding: "6px 14px", fontSize: 11, background: "linear-gradient(135deg, #161625, #131a2e)", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
           ◇ Browse Icons
@@ -667,15 +695,52 @@ export default function IconScaler() {
         </div>
 
         {/* ── Main Content ── */}
-        <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
+        <div
+          style={{ flex: 1, padding: "16px 20px", overflow: "auto", position: "relative" }}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false); }}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleUploadFiles(e.dataTransfer.files); }}
+        >
+          {dragOver && (
+            <div style={{ position: "absolute", inset: 0, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,10,10,0.88)", border: "2px dashed #253050", backdropFilter: "blur(2px)", pointerEvents: "none" }}>
+              <div style={{ textAlign: "center", color: "#7a9ad4", fontFamily: "'DM Mono', monospace" }}>
+                <div style={{ fontSize: 28, marginBottom: 8, lineHeight: 1 }}>↓</div>
+                <div style={{ fontSize: 13 }}>Drop SVG files</div>
+              </div>
+            </div>
+          )}
           {workspace.length === 0 && !loadingWorkspace ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "calc(100vh - 110px)", color: "#888", fontSize: 12, gap: 14 }}>
               <div style={{ fontSize: 32, opacity: 0.2 }}>◇</div>
-              <span>Browse the icon library to add icons</span>
-              <button onClick={() => setShowBrowser(true)}
-                style={{ padding: "8px 18px", fontSize: 12, background: "#131313", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
-                ◇ Browse Icons
-              </button>
+              <span>Browse the icon library or upload your own SVGs</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setShowBrowser(true)}
+                  style={{ padding: "8px 18px", fontSize: 12, background: "#131313", color: "#7a9ad4", border: "1px solid #253050", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+                  ◇ Browse Icons
+                </button>
+                <label style={{ padding: "8px 18px", fontSize: 12, background: "transparent", color: "#999", border: "1px solid #222", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>
+                  ↑ Upload SVG
+                  <input type="file" accept=".svg,image/svg+xml" multiple style={{ display: "none" }}
+                    onChange={(e) => { handleUploadFiles(e.target.files); e.target.value = ""; }} />
+                </label>
+              </div>
+              <div style={{ marginTop: 8, width: "min(340px, 90vw)", background: "#0e0e0e", border: "1px solid #1e1e1e", borderRadius: 8, padding: "12px 14px" }}>
+                <div style={{ fontSize: 9, color: "#888", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>SVG tips for stroke scaling</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {[
+                    ['stroke="currentColor"', "on paths — required for the weight slider to work"],
+                    ['fill="none"', "on paths for a clean outline icon"],
+                    ['viewBox="0 0 24 24"', "always include viewBox for correct scaling"],
+                    ['stroke-width="2"', "on the root <svg> element (not on individual paths)"],
+                    ['stroke-linecap/join="round"', "looks best at small export sizes"],
+                  ].map(([code, desc]) => (
+                    <div key={code} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                      <code style={{ fontSize: 9, color: "#c9a55a", fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>{code}</code>
+                      <span style={{ fontSize: 10, color: "#888" }}>{desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div>
